@@ -117,6 +117,12 @@ None — all new components are pure UI with no network endpoints, auth paths, f
 - DiffCell, ConflictBanner, and RenameTabBar are importable and self-contained
 - Plan 02-03 will wire these into App.tsx and FileList/FileListRow
 
+## Self-Check: PASSED
+
+- All 9 files (8 components + SUMMARY.md) exist on disk ✓
+- All 4 commits (3 task + 1 metadata) exist in git log ✓
+- No new TypeScript errors introduced by this plan ✓
+
 ---
 *Phase: 02-rename-preview*
 *Completed: 2026-05-14*
