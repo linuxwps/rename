@@ -51,25 +51,25 @@ Deferred to future release.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CHAIN-01 | — | Pending |
-| CHAIN-02 | — | Pending |
-| CHAIN-03 | — | Pending |
-| CHAIN-04 | — | Pending |
-| CHAIN-05 | — | Pending |
-| CONF-01 | — | Pending |
-| CONF-02 | — | Pending |
-| CONF-03 | — | Pending |
-| CONF-04 | — | Pending |
-| EXEC-01 | — | Pending |
-| EXEC-02 | — | Pending |
-| EXEC-03 | — | Pending |
-| EXEC-04 | — | Pending |
-| EXEC-05 | — | Pending |
+| CHAIN-01 | Phase 4 | Pending |
+| CHAIN-02 | Phase 5 | Pending |
+| CHAIN-03 | Phase 5 | Pending |
+| CHAIN-04 | Phase 5 | Pending |
+| CHAIN-05 | Phase 4 | Pending |
+| CONF-01 | Phase 5 | Pending |
+| CONF-02 | Phase 4 | Pending |
+| CONF-03 | Phase 5 | Pending |
+| CONF-04 | Phase 5 | Pending |
+| EXEC-01 | Phase 4 | Pending |
+| EXEC-02 | Phase 5 | Pending |
+| EXEC-03 | Phase 4 | Pending |
+| EXEC-04 | Phase 4 | Pending |
+| EXEC-05 | Phase 5 | Pending |
 
 **Coverage:**
 - v1.1 requirements: 14 total
-- Mapped to phases: 0
-- Unmapped: 14 ⚠️
+- Mapped to phases: 14
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-05-14*
