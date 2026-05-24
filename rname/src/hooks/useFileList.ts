@@ -119,8 +119,8 @@ export function useFileList() {
     let cleanup: (() => void) | null = null;
 
     const setupListener = async () => {
-      const appWindow = getCurrentWindow();
-      const unlisten = await appWindow.onDragDropEvent((event) => {
+      const win = getCurrentWindow();
+      const unlisten = await win.onDragDropEvent((event) => {
         if (event.payload.type === "drop") {
           setIsDragging(false);
           addFiles(event.payload.paths);
