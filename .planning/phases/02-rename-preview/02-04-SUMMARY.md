@@ -129,6 +129,12 @@ None — no external service configuration required.
 - Phase 3 (execute rename) can now consume the rename pipeline results and implement actual file rename operations
 - **Note:** Fix the pre-existing Tauri v2 `appWindow` import in `useFileList.ts` before Phase 3
 
+## Self-Check: PASSED
+
+- ✅ All 5 modified source files exist on disk
+- ✅ All 4 commits found in git log
+- ✅ Summary file written to expected path
+
 ---
 
 *Phase: 02-rename-preview*
