@@ -1,10 +1,27 @@
-import { useFileList } from "../hooks/useFileList";
 import { FileList } from "./FileList";
+import type { FileItem } from "../types/file";
+import type { PreviewResult } from "../types/rename";
 import "./FileDropZone.css";
 
-export function FileDropZone() {
-  const { files, isDragging, openFilePicker, openFolderPicker } = useFileList();
+interface FileDropZoneProps {
+  files: FileItem[];
+  isDragging: boolean;
+  previews: Map<string, PreviewResult>;
+  onRemoveFile: (fileId: string) => void;
+  onClearFiles: () => void;
+  onOpenFilePicker: () => void;
+  onOpenFolderPicker: () => void;
+}
 
+export function FileDropZone({
+  files,
+  isDragging,
+  previews,
+  onRemoveFile,
+  onClearFiles,
+  onOpenFilePicker,
+  onOpenFolderPicker,
+}: FileDropZoneProps) {
   return (
     <div className={`file-drop-zone ${isDragging ? "dragging" : ""}`}>
       {files.length === 0 ? (
@@ -14,16 +31,21 @@ export function FileDropZone() {
           </p>
           <p className="drop-or">或</p>
           <div className="drop-buttons">
-            <button className="picker-button" onClick={openFilePicker}>
+            <button className="picker-button" onClick={onOpenFilePicker}>
               选择文件
             </button>
-            <button className="picker-button" onClick={openFolderPicker}>
+            <button className="picker-button" onClick={onOpenFolderPicker}>
               选择文件夹
             </button>
           </div>
         </div>
       ) : (
-        <FileList />
+        <FileList
+          files={files}
+          previews={previews}
+          onRemoveFile={onRemoveFile}
+          onClearFiles={onClearFiles}
+        />
       )}
     </div>
   );
