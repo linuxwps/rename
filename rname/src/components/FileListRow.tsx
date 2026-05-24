@@ -1,13 +1,16 @@
 import type { FileItem } from "../types/file";
+import type { PreviewResult } from "../types/rename";
+import { DiffCell } from "./rename/DiffCell";
 import { formatFileSize } from "../utils/formatFileSize";
 import "./FileList.css";
 
 interface FileListRowProps {
   file: FileItem;
+  previewResult?: PreviewResult;
   onRemove: (fileId: string) => void;
 }
 
-export function FileListRow({ file, onRemove }: FileListRowProps) {
+export function FileListRow({ file, previewResult, onRemove }: FileListRowProps) {
   const formatDate = (timestamp: number): string => {
     if (!timestamp) return "-";
     const date = new Date(timestamp);
@@ -19,9 +22,20 @@ export function FileListRow({ file, onRemove }: FileListRowProps) {
   };
 
   return (
-    <tr className="file-row">
+    <tr className={"file-row" + (previewResult?.hasConflict ? " conflict-row" : "")}>
       <td className="file-name" title={file.path}>
         {file.name}
+      </td>
+      <td className="new-name-column">
+        {previewResult ? (
+          <DiffCell
+            baseNameSegments={previewResult.diffBaseName}
+            extensionSegments={previewResult.diffExtension}
+            hasConflict={previewResult.hasConflict}
+          />
+        ) : (
+          <span className="preview-placeholder">—</span>
+        )}
       </td>
       <td className="file-extension">{file.extension || "-"}</td>
       <td className="file-size">{formatFileSize(file.size)}</td>
