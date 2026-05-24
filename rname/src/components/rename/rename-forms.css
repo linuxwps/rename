@@ -1,0 +1,103 @@
+/* rename-forms.css — Shared form styling for all 6 rename mode forms */
+
+.rename-form {
+  /* Top-level container — no extra padding, parent controls spacing */
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 13px;
+  color: #333;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"] {
+  width: 100%;
+  height: 36px;
+  padding: 8px 12px;
+  font-size: 14px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.form-group input:focus {
+  box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
+  border-color: #007AFF;
+}
+
+.form-group select {
+  width: 100%;
+  height: 36px;
+  padding: 8px 12px;
+  font-size: 14px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  outline: none;
+  box-sizing: border-box;
+  background: #fff;
+}
+
+.form-group select:focus {
+  box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
+  border-color: #007AFF;
+}
+
+.form-group .checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.form-group .checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.form-group .inline-group {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.form-group .inline-group .form-group {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.form-group .radio-group {
+  display: flex;
+  gap: 16px;
+  font-size: 14px;
+}
+
+.form-group .radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.form-error {
+  color: #d32f2f;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.form-hint {
+  color: #999;
+  font-size: 12px;
+  margin-top: 2px;
+}
