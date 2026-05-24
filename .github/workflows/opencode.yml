@@ -24,6 +24,7 @@ jobs:
       - name: Run OpenCode
         uses: anomalyco/opencode/github@latest
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.LONGCAT_API_KEY }}
+          OPENAI_BASE_URL: https://api.longcat.chat/openai
         with:
-          model: anthropic/claude-sonnet-4-20250514
+          model: openai/LongCat-Flash-Thinking-2601
