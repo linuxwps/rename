@@ -32,6 +32,13 @@
   white-space: nowrap;
 }
 
+.new-name-column {
+  min-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .file-extension {
   width: 80px;
   color: #666;
@@ -85,4 +92,19 @@
   background-color: #ffebee;
   border-color: #ffcdd2;
   color: #d32f2f;
+}
+
+/* Conflict row */
+tr.conflict-row {
+  background-color: #fff0f0;
+}
+
+tr.conflict-row td {
+  border-bottom: 1px solid #ffcdd2;
+}
+
+/* Preview placeholder */
+.preview-placeholder {
+  color: #ccc;
+  font-size: 13px;
 }
