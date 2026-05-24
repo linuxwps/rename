@@ -1,7 +1,17 @@
+import { FileDropZone } from "./components/FileDropZone";
+import "./App.css";
+
 function App() {
   return (
     <div className="app">
-      <h1>Rename</h1>
+      <div className="left-panel">
+        <FileDropZone />
+      </div>
+      <div className="right-panel">
+        <div className="placeholder">
+          <p>rename options will appear here</p>
+        </div>
+      </div>
     </div>
   );
 }

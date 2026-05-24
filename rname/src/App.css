@@ -11,4 +11,28 @@ body {
 .app {
   width: 100vw;
   height: 100vh;
+  display: flex;
+}
+
+.left-panel {
+  width: 33.33%;
+  height: 100%;
+  padding: 16px;
+}
+
+.right-panel {
+  width: 66.67%;
+  height: 100%;
+  padding: 16px;
+  background-color: #fafafa;
+  border-left: 1px solid #eee;
+}
+
+.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #999;
+  font-size: 14px;
 }
