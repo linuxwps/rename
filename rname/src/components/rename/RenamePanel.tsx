@@ -1,0 +1,54 @@
+import type { FileItem } from "../../types/file";
+import type { RenameModeStates } from "../../types/rename";
+import { ConflictBanner } from "./ConflictBanner";
+import { RenameTabBar } from "./RenameTabBar";
+import "./RenamePanel.css";
+
+type TabKey = "sequential" | "regex" | "prefix" | "suffix" | "extension" | "replace";
+
+interface RenamePanelProps {
+  files: FileItem[];
+  modeStates: RenameModeStates;
+  onToggleMode: (mode: TabKey) => void;
+  onUpdateModeConfig: <K extends TabKey>(mode: K, patch: Partial<RenameModeStates[K]>) => void;
+  activeTabForm: TabKey | null;
+  onSetActiveTabForm: (tab: TabKey | null) => void;
+  totalConflicts: number;
+  activeFormComponent?: React.ReactNode;
+}
+
+export function RenamePanel({
+  files,
+  modeStates,
+  onToggleMode,
+  activeTabForm,
+  onSetActiveTabForm,
+  totalConflicts,
+  activeFormComponent,
+}: RenamePanelProps) {
+  if (files.length === 0) {
+    return (
+      <div className="rename-panel-empty">
+        请先在左侧添加文件
+      </div>
+    );
+  }
+
+  return (
+    <div className="rename-panel">
+      <ConflictBanner totalConflicts={totalConflicts} />
+      <RenameTabBar
+        modeStates={modeStates}
+        onToggleMode={onToggleMode}
+        activeTabForm={activeTabForm}
+        onSetActiveTabForm={onSetActiveTabForm}
+        hasFiles={files.length > 0}
+      />
+      <div className="rename-form-area">
+        {activeFormComponent || (
+          <p className="rename-form-hint">选择一个模式开始重命名</p>
+        )}
+      </div>
+    </div>
+  );
+}

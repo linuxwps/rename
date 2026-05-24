@@ -1,0 +1,28 @@
+.rename-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0;
+}
+
+.rename-panel-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #999;
+  font-size: 14px;
+}
+
+.rename-form-area {
+  padding: 16px 0;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.rename-form-hint {
+  color: #999;
+  font-size: 13px;
+  text-align: center;
+  padding: 24px;
+}
