@@ -1,6 +1,6 @@
 import { FileList } from "./FileList";
 import type { FileItem } from "../types/file";
-import type { PreviewResult } from "../types/rename";
+import type { PreviewResult, ExecutionResult } from "../types/rename";
 import "./FileDropZone.css";
 
 interface FileDropZoneProps {
@@ -11,6 +11,8 @@ interface FileDropZoneProps {
   onClearFiles: () => void;
   onOpenFilePicker: () => void;
   onOpenFolderPicker: () => void;
+  executionResults?: Record<string, ExecutionResult>;
+  executionErrors?: Record<string, string>;
 }
 
 export function FileDropZone({
@@ -21,6 +23,8 @@ export function FileDropZone({
   onClearFiles,
   onOpenFilePicker,
   onOpenFolderPicker,
+  executionResults,
+  executionErrors,
 }: FileDropZoneProps) {
   return (
     <div className={`file-drop-zone ${isDragging ? "dragging" : ""}`}>
@@ -45,6 +49,8 @@ export function FileDropZone({
           previews={previews}
           onRemoveFile={onRemoveFile}
           onClearFiles={onClearFiles}
+          executionResults={executionResults}
+          executionErrors={executionErrors}
         />
       )}
     </div>
