@@ -120,6 +120,13 @@ None — all new files are pure client-side computation with no network endpoint
 - `useRenameEngine` hook provides `{ previews, totalConflicts }` output — downstream plans consume this
 - Conflict detection and diff computation integrated into the preview hook
 
+## Self-Check: PASSED
+
+- ✅ All 5 expected files exist (4 source + 1 summary)
+- ✅ All 3 task commits found in git log
+- ✅ npm run build failures are pre-existing (useFileList.ts), not from this plan
+
 ---
+
 *Phase: 02-rename-preview*
 *Completed: 2026-05-14*
