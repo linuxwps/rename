@@ -1,27 +1,38 @@
-/* rename-forms.css — Shared form styling for all 6 rename mode forms */
-
 .rename-form {
-  /* Top-level container — no extra padding, parent controls spacing */
+  padding: 4px 0;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  align-items: center;
 }
 
 .form-group {
-  margin-bottom: 16px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .form-group label {
-  display: block;
   font-size: 13px;
   color: #333;
-  margin-bottom: 6px;
   font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .form-group input[type="text"],
 .form-group input[type="number"] {
-  width: 100%;
-  height: 36px;
-  padding: 8px 12px;
-  font-size: 14px;
+  flex: 1;
+  min-width: 60px;
+  height: 32px;
+  padding: 4px 10px;
+  font-size: 13px;
   border: 1px solid #ddd;
   border-radius: 6px;
   outline: none;
@@ -34,10 +45,9 @@
 }
 
 .form-group select {
-  width: 100%;
-  height: 36px;
-  padding: 8px 12px;
-  font-size: 14px;
+  height: 32px;
+  padding: 4px 10px;
+  font-size: 13px;
   border: 1px solid #ddd;
   border-radius: 6px;
   outline: none;
@@ -53,47 +63,47 @@
 .form-group .checkbox-label {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 14px;
+  gap: 6px;
+  font-size: 13px;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .form-group .checkbox-label input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   cursor: pointer;
 }
 
-.form-group .inline-group {
-  display: flex;
-  gap: 12px;
-  align-items: flex-end;
+.form-group--checkbox {
+  flex: 0 0 auto;
+  padding-left: 4px;
 }
 
-.form-group .inline-group .form-group {
-  flex: 1;
+.form-group--checkbox label {
   margin-bottom: 0;
 }
 
 .form-group .radio-group {
   display: flex;
-  gap: 16px;
-  font-size: 14px;
+  gap: 12px;
+  font-size: 13px;
+  align-items: center;
 }
 
 .form-group .radio-group label {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 400;
 }
 
 .form-error {
   color: #d32f2f;
-  font-size: 13px;
-  margin-top: 4px;
+  font-size: 12px;
+  margin-top: 2px;
 }
 
 .form-hint {

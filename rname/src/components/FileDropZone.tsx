@@ -8,7 +8,6 @@ interface FileDropZoneProps {
   isDragging: boolean;
   previews: Map<string, PreviewResult>;
   onRemoveFile: (fileId: string) => void;
-  onClearFiles: () => void;
   onOpenFilePicker: () => void;
   onOpenFolderPicker: () => void;
   executionResults?: Record<string, ExecutionResult>;
@@ -20,7 +19,6 @@ export function FileDropZone({
   isDragging,
   previews,
   onRemoveFile,
-  onClearFiles,
   onOpenFilePicker,
   onOpenFolderPicker,
   executionResults,
@@ -48,7 +46,6 @@ export function FileDropZone({
           files={files}
           previews={previews}
           onRemoveFile={onRemoveFile}
-          onClearFiles={onClearFiles}
           executionResults={executionResults}
           executionErrors={executionErrors}
         />

@@ -6,13 +6,19 @@ import "./FileList.css";
 
 interface FileListRowProps {
   file: FileItem;
+  colWidths: Record<string, number>;
   previewResult?: PreviewResult;
   onRemove: (fileId: string) => void;
   executionResult?: ExecutionResult;
   executionError?: string;
 }
 
-export function FileListRow({ file, previewResult, onRemove, executionResult, executionError }: FileListRowProps) {
+function colStyle(widths: Record<string, number>, key: string) {
+  const w = widths[key];
+  return w ? { width: `${w}px`, maxWidth: `${w}px` } : undefined;
+}
+
+export function FileListRow({ file, colWidths, previewResult, onRemove, executionResult, executionError }: FileListRowProps) {
   const formatDate = (timestamp: number): string => {
     if (!timestamp) return "-";
     const date = new Date(timestamp);
@@ -25,10 +31,10 @@ export function FileListRow({ file, previewResult, onRemove, executionResult, ex
 
   return (
     <tr className={"file-row" + (previewResult?.hasConflict ? " conflict-row" : "")}>
-      <td className="file-name" title={file.path}>
+      <td className="file-name" data-col="fileName" style={colStyle(colWidths, "fileName")} title={file.path}>
         {file.name}
       </td>
-      <td className="new-name-column">
+      <td className="new-name-column" data-col="newName" style={colStyle(colWidths, "newName")}>
         {previewResult ? (
           <DiffCell
             baseNameSegments={previewResult.diffBaseName}
@@ -39,10 +45,16 @@ export function FileListRow({ file, previewResult, onRemove, executionResult, ex
           <span className="preview-placeholder">—</span>
         )}
       </td>
-      <td className="file-extension">{file.extension || "-"}</td>
-      <td className="file-size">{formatFileSize(file.size)}</td>
-      <td className="file-date">{formatDate(file.modifiedAt)}</td>
-      <td className="file-actions">
+      <td className="file-extension" data-col="extension" style={colStyle(colWidths, "extension")}>
+        {file.extension || "-"}
+      </td>
+      <td className="file-size" data-col="size" style={colStyle(colWidths, "size")}>
+        {formatFileSize(file.size)}
+      </td>
+      <td className="file-date" data-col="date" style={colStyle(colWidths, "date")}>
+        {formatDate(file.modifiedAt)}
+      </td>
+      <td className="file-actions" data-col="actions">
         {executionResult === "success" ? (
           <span className="result-indicator result-indicator--success" title="成功">
             ✓

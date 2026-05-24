@@ -49,7 +49,7 @@ export function RenameTabBar({
               onSetActiveTabForm(tab.key);
             }}
           >
-            {tab.icon} {tab.label}
+            {tab.icon} {tab.label}{enabled ? " [选中]" : ""}
           </button>
         );
       })}

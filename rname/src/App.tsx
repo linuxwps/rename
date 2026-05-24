@@ -53,6 +53,37 @@ function App() {
 
   const { previews, totalConflicts } = useRenameEngine(files, debouncedModes);
 
+  // Resizable split panel
+  const [topRatio, setTopRatio] = useState(0.7);
+  const isResizing = useRef(false);
+
+  const handleResizeStart = useCallback(() => {
+    isResizing.current = true;
+    document.body.style.cursor = "row-resize";
+    document.body.style.userSelect = "none";
+  }, []);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing.current) return;
+      const ratio = e.clientY / window.innerHeight;
+      setTopRatio(Math.max(0.2, Math.min(0.8, ratio)));
+    };
+    const handleMouseUp = () => {
+      if (isResizing.current) {
+        isResizing.current = false;
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+      }
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, []);
+
   // Toast state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastType, setToastType] = useState<ToastType>("success");
@@ -110,6 +141,19 @@ function App() {
     }
     prevExecutedRef.current = hasExecuted;
   }, [hasExecuted, executionResults, executionErrors, showToast]);
+
+  // Toast when execution finishes but all files failed (hasExecuted stays false)
+  const prevIsExecutingRef = useRef(false);
+  useEffect(() => {
+    if (prevIsExecutingRef.current && !isExecuting) {
+      const errorKeys = Object.keys(executionErrors);
+      if (errorKeys.length > 0 && !hasExecuted) {
+        const firstError = executionErrors[errorKeys[0]] || "未知错误";
+        showToast(`重命名失败：${firstError}`, "error");
+      }
+    }
+    prevIsExecutingRef.current = isExecuting;
+  }, [isExecuting, executionErrors, hasExecuted, showToast]);
 
   // Toast on undo complete
   const prevHasExecutedRef = useRef(hasExecuted);
@@ -184,20 +228,20 @@ function App() {
 
   return (
     <div className="app">
-      <div className="left-panel">
+      <div className="top-panel" style={{ height: `${topRatio * 100}%` }}>
         <FileDropZone
           files={files}
           isDragging={isDragging}
           previews={previewMap}
           onRemoveFile={removeFile}
-          onClearFiles={clearFiles}
           onOpenFilePicker={openFilePicker}
           onOpenFolderPicker={openFolderPicker}
           executionResults={executionResults}
           executionErrors={executionErrors}
         />
       </div>
-      <div className="right-panel">
+      <div className="resize-handle" onMouseDown={handleResizeStart} />
+      <div className="bottom-panel">
         <RenamePanel
           files={files}
           modeStates={modeStates}
@@ -211,6 +255,7 @@ function App() {
           hasExecuted={hasExecuted}
           onExecute={handleExecute}
           onUndo={handleUndo}
+          onClearFiles={clearFiles}
         />
       </div>
       <Toast

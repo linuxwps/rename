@@ -6,6 +6,8 @@ interface ActionBarProps {
   hasExecuted: boolean;
   onExecute: () => void;
   onUndo: () => void;
+  onClearFiles?: () => void;
+  hasFiles: boolean;
 }
 
 export function ActionBar({
@@ -14,6 +16,8 @@ export function ActionBar({
   hasExecuted,
   onExecute,
   onUndo,
+  onClearFiles,
+  hasFiles,
 }: ActionBarProps) {
   if (hasExecuted) {
     return (
@@ -39,6 +43,11 @@ export function ActionBar({
           <span className="action-bar__conflicts">
             ⚠ 发现 {totalConflicts} 个冲突
           </span>
+        )}
+        {hasFiles && onClearFiles && (
+          <button className="clear-bar-btn" onClick={onClearFiles}>
+            清空列表
+          </button>
         )}
       </div>
       <div className="action-bar__actions">

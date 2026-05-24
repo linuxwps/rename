@@ -1,0 +1,16 @@
+# planning
+.planning/
+
+# Rust / Tauri
+rname/src-tauri/target/
+rname/src-tauri/Cargo.lock
+rname/src-tauri/gen/
+
+# Node
+rname/node_modules/
+rname/dist/
+
+# macOS
+.DS_Store
+*.dmg
+Rename.app/

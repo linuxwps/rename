@@ -12,20 +12,47 @@ body {
   width: 100vw;
   height: 100vh;
   display: flex;
+  flex-direction: column;
 }
 
-.left-panel {
-  width: 33.33%;
-  height: 100%;
-  padding: 16px;
+.top-panel {
+  min-height: 0;
+  padding: 16px 16px 0 16px;
+  overflow: hidden;
 }
 
-.right-panel {
-  width: 66.67%;
-  height: 100%;
+.resize-handle {
+  height: 5px;
+  cursor: row-resize;
+  background: transparent;
+  position: relative;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.resize-handle::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 2px;
+  width: 40px;
+  height: 2px;
+  background: #ccc;
+  border-radius: 1px;
+  transform: translateX(-50%);
+}
+
+.resize-handle:hover::after {
+  background: #007AFF;
+}
+
+.bottom-panel {
+  flex: 1;
+  min-height: 0;
   padding: 16px;
   background-color: #fafafa;
-  border-left: 1px solid #eee;
+  border-top: 1px solid #eee;
+  overflow: hidden;
 }
 
 .placeholder {

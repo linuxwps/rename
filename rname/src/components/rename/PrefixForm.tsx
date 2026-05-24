@@ -1,4 +1,5 @@
 import type { PrefixConfig } from "../../types/rename";
+import "./rename-forms.css";
 
 interface PrefixFormProps {
   config: PrefixConfig;
@@ -8,14 +9,16 @@ interface PrefixFormProps {
 export function PrefixForm({ config, onChange }: PrefixFormProps) {
   return (
     <div className="rename-form">
-      <div className="form-group">
-        <label>前缀文本</label>
-        <input
-          type="text"
-          value={config.text}
-          placeholder="输入前缀文字"
-          onChange={(e) => onChange({ text: e.target.value })}
-        />
+      <div className="form-row">
+        <div className="form-group">
+          <label>前缀文本</label>
+          <input
+            type="text"
+            value={config.text}
+            placeholder="输入前缀文字"
+            onChange={(e) => onChange({ text: e.target.value })}
+          />
+        </div>
       </div>
     </div>
   );

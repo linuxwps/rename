@@ -3,12 +3,15 @@
   flex-direction: column;
   width: 100%;
   height: 100%;
+  overflow: auto;
 }
 
 .file-table {
   width: 100%;
+  min-width: 700px;
   border-collapse: collapse;
   font-size: 13px;
+  table-layout: fixed;
 }
 
 .file-table th {
@@ -18,45 +21,68 @@
   border-bottom: 1px solid #ddd;
   font-weight: 600;
   color: #333;
+  position: relative;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.file-table th[data-col="actions"] {
+  width: 40px;
 }
 
 .file-table td {
   padding: 8px;
   border-bottom: 1px solid #eee;
-}
-
-.file-name {
-  max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  box-sizing: border-box;
 }
 
-.new-name-column {
-  min-width: 150px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.file-extension {
-  width: 80px;
-  color: #666;
-}
-
-.file-size {
-  width: 80px;
-  color: #666;
-}
-
-.file-date {
-  width: 100px;
-  color: #666;
-}
-
-.file-actions {
+.file-table td[data-col="actions"] {
   width: 40px;
   text-align: center;
+  overflow: visible;
+}
+
+.file-name,
+.file-extension,
+.file-size,
+.file-date,
+.new-name-column {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.col-resize-handle {
+  position: absolute;
+  top: 0;
+  right: -2px;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 10;
+}
+
+.col-resize-handle:hover {
+  background-color: #007AFF;
+}
+
+.col-resize-handle::after {
+  content: "";
+  position: absolute;
+  top: 25%;
+  right: 3px;
+  height: 50%;
+  width: 1px;
+  background: #ccc;
+}
+
+.col-resize-handle:hover::after {
+  background: #fff;
 }
 
 .remove-button {
@@ -75,26 +101,6 @@
   color: #d32f2f;
 }
 
-.clear-button {
-  margin-top: 16px;
-  padding: 10px 20px;
-  background-color: #f5f5f5;
-  color: #666;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 14px;
-  cursor: pointer;
-  align-self: flex-start;
-  transition: all 0.2s;
-}
-
-.clear-button:hover {
-  background-color: #ffebee;
-  border-color: #ffcdd2;
-  color: #d32f2f;
-}
-
-/* Conflict row */
 tr.conflict-row {
   background-color: #fff0f0;
 }
@@ -103,7 +109,6 @@ tr.conflict-row td {
   border-bottom: 1px solid #ffcdd2;
 }
 
-/* Execution result indicators */
 .result-indicator {
   width: 32px;
   text-align: center;
@@ -120,7 +125,6 @@ tr.conflict-row td {
   color: #d32f2f;
 }
 
-/* Preview placeholder */
 .preview-placeholder {
   color: #ccc;
   font-size: 13px;

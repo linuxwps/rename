@@ -20,6 +20,7 @@ interface RenamePanelProps {
   hasExecuted: boolean;
   onExecute: () => void;
   onUndo: () => void;
+  onClearFiles: () => void;
 }
 
 export function RenamePanel({
@@ -34,11 +35,12 @@ export function RenamePanel({
   hasExecuted,
   onExecute,
   onUndo,
+  onClearFiles,
 }: RenamePanelProps) {
   if (files.length === 0) {
     return (
       <div className="rename-panel-empty">
-        请先在左侧添加文件
+        请先在上方添加文件
       </div>
     );
   }
@@ -65,6 +67,8 @@ export function RenamePanel({
           hasExecuted={hasExecuted}
           onExecute={onExecute}
           onUndo={onUndo}
+          onClearFiles={onClearFiles}
+          hasFiles={files.length > 0}
         />
       )}
     </div>
