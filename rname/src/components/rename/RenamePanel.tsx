@@ -2,6 +2,7 @@ import type { FileItem } from "../../types/file";
 import type { RenameModeStates } from "../../types/rename";
 import { ConflictBanner } from "./ConflictBanner";
 import { RenameTabBar } from "./RenameTabBar";
+import { ActionBar } from "./ActionBar";
 import "./RenamePanel.css";
 
 type TabKey = "sequential" | "regex" | "prefix" | "suffix" | "extension" | "replace";
@@ -15,6 +16,10 @@ interface RenamePanelProps {
   onSetActiveTabForm: (tab: TabKey | null) => void;
   totalConflicts: number;
   activeFormComponent?: React.ReactNode;
+  isExecuting: boolean;
+  hasExecuted: boolean;
+  onExecute: () => void;
+  onUndo: () => void;
 }
 
 export function RenamePanel({
@@ -25,6 +30,10 @@ export function RenamePanel({
   onSetActiveTabForm,
   totalConflicts,
   activeFormComponent,
+  isExecuting,
+  hasExecuted,
+  onExecute,
+  onUndo,
 }: RenamePanelProps) {
   if (files.length === 0) {
     return (
@@ -49,6 +58,15 @@ export function RenamePanel({
           <p className="rename-form-hint">选择一个模式开始重命名</p>
         )}
       </div>
+      {files.length > 0 && (
+        <ActionBar
+          totalConflicts={totalConflicts}
+          isExecuting={isExecuting}
+          hasExecuted={hasExecuted}
+          onExecute={onExecute}
+          onUndo={onUndo}
+        />
+      )}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import type { FileItem } from "../types/file";
-import type { PreviewResult } from "../types/rename";
+import type { PreviewResult, ExecutionResult } from "../types/rename";
 import { FileListRow } from "./FileListRow";
 import "./FileList.css";
 
@@ -8,9 +8,11 @@ interface FileListProps {
   previews: Map<string, PreviewResult>;
   onRemoveFile: (fileId: string) => void;
   onClearFiles: () => void;
+  executionResults?: Record<string, ExecutionResult>;
+  executionErrors?: Record<string, string>;
 }
 
-export function FileList({ files, previews, onRemoveFile, onClearFiles }: FileListProps) {
+export function FileList({ files, previews, onRemoveFile, onClearFiles, executionResults, executionErrors }: FileListProps) {
   return (
     <div className="file-list-container">
       <table className="file-table">
@@ -31,6 +33,8 @@ export function FileList({ files, previews, onRemoveFile, onClearFiles }: FileLi
               file={file}
               previewResult={previews.get(file.id)}
               onRemove={onRemoveFile}
+              executionResult={executionResults?.[file.id]}
+              executionError={executionErrors?.[file.id]}
             />
           ))}
         </tbody>

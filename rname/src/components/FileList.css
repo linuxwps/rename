@@ -103,6 +103,23 @@ tr.conflict-row td {
   border-bottom: 1px solid #ffcdd2;
 }
 
+/* Execution result indicators */
+.result-indicator {
+  width: 32px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.result-indicator--success {
+  color: #155724;
+}
+
+.result-indicator--fail {
+  color: #d32f2f;
+}
+
 /* Preview placeholder */
 .preview-placeholder {
   color: #ccc;
