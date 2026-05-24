@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { stat, readDir } from "@tauri-apps/plugin-fs";
-import { appWindow } from "@tauri-apps/api/window";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { FileItem } from "../types/file";
+import type { FileItemUpdate } from "../types/rename";
 
 const FILE_LIMIT = 100;
 
@@ -102,17 +103,30 @@ export function useFileList() {
     }
   }, [addFiles]);
 
+  const updateFileNames = useCallback(
+    (updates: Map<string, FileItemUpdate>): void => {
+      setFiles((prev) =>
+        prev.map((f) => {
+          const u = updates.get(f.id);
+          return u ? { ...f, ...u } : f;
+        })
+      );
+    },
+    []
+  );
+
   useEffect(() => {
     let cleanup: (() => void) | null = null;
 
     const setupListener = async () => {
-      const unlisten = await appWindow.onFileDropEvent((event) => {
+      const appWindow = getCurrentWindow();
+      const unlisten = await appWindow.onDragDropEvent((event) => {
         if (event.payload.type === "drop") {
           setIsDragging(false);
           addFiles(event.payload.paths);
-        } else if (event.payload.type === "hover") {
+        } else if (event.payload.type === "over") {
           setIsDragging(true);
-        } else if (event.payload.type === "cancel") {
+        } else if (event.payload.type === "leave") {
           setIsDragging(false);
         }
       });
@@ -135,5 +149,6 @@ export function useFileList() {
     clearFiles,
     openFilePicker,
     openFolderPicker,
+    updateFileNames,
   };
 }

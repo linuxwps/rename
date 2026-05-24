@@ -70,3 +70,16 @@ export interface PreviewResult {
   hasConflict: boolean;
   conflictWith: string[];
 }
+
+/** 单个文件的执行状态 */
+export type ExecutionResult = "pending" | "success" | "fail";
+
+/** 执行错误映射 fileId → errorMessage */
+export type ExecutionErrors = Record<string, string>;
+
+/** 执行后文件更新数据 */
+export interface FileItemUpdate {
+  path: string;
+  name: string;
+  extension: string;
+}
