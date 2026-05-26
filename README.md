@@ -4,7 +4,7 @@
 
 ## 功能
 
-- **6 种重命名模式**：序号、正则、前缀、后缀、扩展名、替换
+- **6 种重命名模式**：序号、正则、前缀、后缀、扩展名、替换，可任选一种或者多种组合的方式去重命名
 - **实时预览**：修改前后对比，带词级差异高亮
 - **冲突检测**：自动检测重名并告警
 - **两步重命名**：先转临时名再转最终名，避免碰撞
@@ -19,8 +19,8 @@
 
 | 平台 | 支持 |
 |------|------|
-| macOS 11+ | ✅ (Intel + Apple Silicon) |
-| Windows 10+ | ✅ |
+| macOS 11+ | ✅ (Intel + Apple Silicon)(.dmg) |
+| Windows 10+ | ✅ (.exe)|
 | Linux | ✅ (.deb) |
 
 ## 快速开始
@@ -55,15 +55,6 @@ npm run tauri build
 - **前端**：React 19 + TypeScript + Vite 8
 - **后端**：Rust
 - **CI/CD**：GitHub Actions（macOS .dmg / Windows .exe / Linux .deb）
-
-## 发布流程
-
-```bash
-git tag v1.0.0
-git push origin v1.0.0
-```
-
-自动触发 GitHub Actions 构建并生成 Release。
 
 ## 许可证
 
