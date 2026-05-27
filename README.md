@@ -13,7 +13,10 @@
 
 ## 截图
 
-（待补充）
+<img width="2158" height="1390" alt="mac_1" src="https://github.com/user-attachments/assets/089ab5a0-63d5-40d2-980e-858fbf151a07" />
+<img width="2158" height="1390" alt="mac_2" src="https://github.com/user-attachments/assets/803ec42e-1443-4e41-bb2f-596f2e478191" />
+<img width="854" height="632" alt="win_1" src="https://github.com/user-attachments/assets/a73612a3-b088-496b-88d8-fdfe2d80d77d" />
+
 
 ## 系统要求
 
