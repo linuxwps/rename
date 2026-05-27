@@ -17,7 +17,7 @@ export function useFileList() {
     for (const path of paths) {
       try {
         const metadata = await stat(path);
-        const name = path.split("/").pop() || "";
+        const name = path.split(/[/\\]/).pop() || "";
         const extMatch = name.match(/\.([^.]+)$/);
         const extension = extMatch ? extMatch[1] : "";
 
@@ -93,9 +93,10 @@ export function useFileList() {
     if (selected) {
       try {
         const entries = await readDir(selected);
+        const sep = selected.includes("\\") ? "\\" : "/";
         const filePaths = entries
           .filter((e) => e.isFile)
-          .map((e) => `${selected}/${e.name}`);
+          .map((e) => `${selected}${sep}${e.name}`);
         await addFiles(filePaths);
       } catch (err) {
         console.error("Failed to read folder:", err);
