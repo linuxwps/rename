@@ -4,8 +4,8 @@
   justify-content: space-between;
   height: 48px;
   padding: 0 16px;
-  background-color: #fafafa;
-  border-top: 1px solid #eee;
+  background-color: var(--color-bg);
+  border-top: 1px solid var(--color-border-light);
   flex-shrink: 0;
 }
 
@@ -19,7 +19,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  color: #d32f2f;
+  color: var(--color-error);
   font-size: 13px;
 }
 
@@ -31,16 +31,16 @@
 }
 
 .action-bar__status--success {
-  color: #155724;
+  color: var(--color-success);
 }
 
 .clear-bar-btn {
   padding: 6px 14px;
   background: none;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   font-size: 13px;
-  color: #666;
+  color: var(--color-text-light);
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -48,7 +48,7 @@
 .clear-bar-btn:hover {
   background-color: #ffebee;
   border-color: #ffcdd2;
-  color: #d32f2f;
+  color: var(--color-error);
 }
 
 .action-bar__actions {
@@ -58,7 +58,7 @@
 
 .exec-btn {
   padding: 8px 24px;
-  background-color: #007aff;
+  background-color: var(--color-primary);
   color: #fff;
   border: none;
   border-radius: 6px;
@@ -74,7 +74,7 @@
 
 .exec-btn:disabled {
   background-color: #e0e0e0;
-  color: #999;
+  color: var(--color-text-muted);
   cursor: not-allowed;
 }
 
@@ -85,8 +85,8 @@
 .undo-btn {
   padding: 8px 20px;
   background-color: #fff;
-  color: #666;
-  border: 1px solid #ddd;
+  color: var(--color-text-light);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   font-size: 14px;
   font-weight: 400;
@@ -95,13 +95,13 @@
 }
 
 .undo-btn:hover:not(:disabled) {
-  color: #007aff;
-  border-color: #007aff;
+  color: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 .undo-btn:disabled {
-  color: #ccc;
-  border-color: #eee;
+  color: var(--color-disabled);
+  border-color: var(--color-border-light);
   cursor: not-allowed;
 }
 

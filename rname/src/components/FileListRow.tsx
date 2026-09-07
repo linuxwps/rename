@@ -1,7 +1,9 @@
+import { memo } from "react";
 import type { FileItem } from "../types/file";
 import type { PreviewResult, ExecutionResult } from "../types/rename";
 import { DiffCell } from "./rename/DiffCell";
 import { formatFileSize } from "../utils/formatFileSize";
+import { formatDate } from "../utils/formatDate";
 import "./FileList.css";
 
 interface FileListRowProps {
@@ -18,17 +20,7 @@ function colStyle(widths: Record<string, number>, key: string) {
   return w ? { width: `${w}px`, maxWidth: `${w}px` } : undefined;
 }
 
-export function FileListRow({ file, colWidths, previewResult, onRemove, executionResult, executionError }: FileListRowProps) {
-  const formatDate = (timestamp: number): string => {
-    if (!timestamp) return "-";
-    const date = new Date(timestamp);
-    return date.toLocaleDateString("zh-CN", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    });
-  };
-
+export const FileListRow = memo(function FileListRow({ file, colWidths, previewResult, onRemove, executionResult, executionError }: FileListRowProps) {
   return (
     <tr className={"file-row" + (previewResult?.hasConflict ? " conflict-row" : "")}>
       <td className="file-name" data-col="fileName" style={colStyle(colWidths, "fileName")} title={file.path}>
@@ -75,4 +67,4 @@ export function FileListRow({ file, colWidths, previewResult, onRemove, executio
       </td>
     </tr>
   );
-}
+});

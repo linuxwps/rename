@@ -1,3 +1,6 @@
+/** Tab 键名 - 所有重命名模式的 key */
+export type TabKey = "sequential" | "regex" | "prefix" | "suffix" | "extension" | "replace";
+
 /** Sequential 模式配置 */
 export interface SequentialConfig {
   enabled: boolean;

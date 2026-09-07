@@ -1,3 +1,4 @@
+import { memo } from "react";
 import type { DiffSegment } from "../../types/rename";
 import "./DiffCell.css";
 
@@ -7,7 +8,7 @@ interface DiffCellProps {
   hasConflict: boolean;
 }
 
-export function DiffCell({
+export const DiffCell = memo(function DiffCell({
   baseNameSegments,
   extensionSegments,
   hasConflict,
@@ -27,4 +28,4 @@ export function DiffCell({
       ))}
     </span>
   );
-}
+});

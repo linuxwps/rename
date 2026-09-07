@@ -60,6 +60,9 @@ export function useRenameEngine(
   previews: PreviewResult[];
   totalConflicts: number;
 } {
+  // 稳定依赖：用排序后的文件 ID 拼接字符串代替完整 files 数组引用
+  const fileIdsKey = useMemo(() => files.map((f) => f.id).sort().join(","), [files]);
+
   return useMemo(() => {
     // 对文件按修改时间升序排序（副本排序，不修改原数组）
     const sorted = [...files].sort(
@@ -67,7 +70,9 @@ export function useRenameEngine(
     );
 
     const previews: PreviewResult[] = sorted.map((file, index) => {
-      const oldBaseName = file.name.replace(`.${file.extension}`, "");
+      const extDot = file.extension ? `.${file.extension}` : "";
+      const lastDotIdx = extDot ? file.name.lastIndexOf(extDot) : -1;
+      const oldBaseName = lastDotIdx > 0 ? file.name.slice(0, lastDotIdx) : file.name;
       const oldExtension = file.extension;
 
       const { newBaseName, newExtension } = applyRenamePipeline(
@@ -81,35 +86,32 @@ export function useRenameEngine(
         ? `${newBaseName}.${newExtension}`
         : newBaseName;
 
-      // 对 baseName 部分进行词级 diff
-      const baseNameDiff = diffWords(oldBaseName, newBaseName);
-      const diffBaseName: DiffSegment[] = baseNameDiff.map((part) => ({
-        value: part.value,
-        type: part.added ? "added" : part.removed ? "removed" : "unchanged",
-      }));
+      // 对 baseName 部分进行词级 diff（仅在有变化时计算）
+      let diffBaseName: DiffSegment[];
+      if (oldBaseName === newBaseName) {
+        diffBaseName = [{ value: oldBaseName, type: "unchanged" }];
+      } else {
+        const baseNameDiff = diffWords(oldBaseName, newBaseName);
+        diffBaseName = baseNameDiff.map((part) => ({
+          value: part.value,
+          type: part.added ? "added" : part.removed ? "removed" : "unchanged",
+        }));
+      }
 
-      // 对 extension 部分进行 diff
-      let extensionDiff;
-      if (oldExtension !== newExtension) {
-        extensionDiff = diffWords(
+      // 对 extension 部分进行 diff（仅在有变化时计算）
+      let diffExtension: DiffSegment[];
+      if (oldExtension === newExtension) {
+        diffExtension = [{ value: oldExtension ? `.${oldExtension}` : "", type: "unchanged" }];
+      } else {
+        const extensionDiff = diffWords(
           oldExtension ? `.${oldExtension}` : "",
           newExtension ? `.${newExtension}` : ""
         );
-      } else {
-        extensionDiff = [
-          {
-            value: oldExtension ? `.${oldExtension}` : "",
-            added: false,
-            removed: false,
-            count: 1,
-          },
-        ];
+        diffExtension = extensionDiff.map((part) => ({
+          value: part.value,
+          type: part.added ? "added" : part.removed ? "removed" : "unchanged",
+        }));
       }
-
-      const diffExtension: DiffSegment[] = extensionDiff.map((part) => ({
-        value: part.value,
-        type: part.added ? "added" : part.removed ? "removed" : "unchanged",
-      }));
 
       return {
         fileId: file.id,
@@ -130,5 +132,5 @@ export function useRenameEngine(
 
     const totalConflicts = previews.filter((p) => p.hasConflict).length;
     return { previews, totalConflicts };
-  }, [files, modes]);
+  }, [fileIdsKey, modes]);
 }

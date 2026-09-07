@@ -4,7 +4,7 @@
 
 .diff-added {
   background-color: #d4edda;
-  color: #155724;
+  color: var(--color-success);
   border-radius: 2px;
 }
 
@@ -24,5 +24,5 @@
 
 .conflict-icon {
   margin-right: 4px;
-  color: #d32f2f;
+  color: var(--color-error);
 }

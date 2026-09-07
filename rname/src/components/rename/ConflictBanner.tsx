@@ -10,7 +10,7 @@ export function ConflictBanner({ totalConflicts }: ConflictBannerProps) {
   }
 
   return (
-    <div className="conflict-banner">
+    <div className="conflict-banner" role="alert">
       ⚠️ 发现 {totalConflicts} 个重名文件，请调整重命名规则
     </div>
   );

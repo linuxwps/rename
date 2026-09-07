@@ -39,9 +39,11 @@ export function applyRenamePipeline(
   modes: RenameModeStates,
   index: number,
   _totalFiles: number
-): { newBaseName: string; newExtension: string } {
-  // 从文件名中分离 baseName 和 extension
-  let baseName = file.name.replace(`.${file.extension}`, "");
+): { newBaseName: string; newExtension: string; error?: string } {
+  // 从文件名中分离 baseName 和 extension（处理含多 . 的文件名）
+  const extDot = file.extension ? `.${file.extension}` : "";
+  const lastDotIdx = extDot ? file.name.lastIndexOf(extDot) : -1;
+  let baseName = lastDotIdx > 0 ? file.name.slice(0, lastDotIdx) : file.name;
   let newExtension = file.extension;
 
   for (const mode of MODE_ORDER) {
@@ -68,13 +70,14 @@ export function applyRenamePipeline(
         try {
           baseName = baseName.replace(new RegExp(r.pattern, flags), r.replacement);
         } catch {
-          // 无效正则表达式，跳过该步骤
+          return { newBaseName: baseName, newExtension, error: `Invalid regex: ${r.pattern}` };
         }
         break;
       }
 
       case "replace": {
         const r = config as ReplaceConfig;
+        if (!r.findText) break;
         const flags = r.caseSensitive ? "g" : "gi";
         // 对 findText 做正则转义，确保按字面匹配
         const escaped = r.findText.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

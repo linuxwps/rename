@@ -47,6 +47,19 @@ function validateNewNames(
 }
 
 /**
+ * 带超时的 Promise。
+ */
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout>;
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`Operation timed out after ${ms}ms`)), ms);
+    }),
+  ]).finally(() => clearTimeout(timer));
+}
+
+/**
  * 批量重命名执行器 hook。
  *
  * 核心功能：
@@ -77,9 +90,14 @@ export function useRenameExecutor(
   const previewsRef = useRef(previews);
   previewsRef.current = previews;
 
+  // 使用 ref 做同步锁，避免双击重复执行
+  const executingRef = useRef(false);
+
   const execute = useCallback(async (): Promise<void> => {
-    // 重复点击防护
-    if (isExecuting) return;
+    // 重复点击防护（同步检查）
+    if (executingRef.current) return;
+    executingRef.current = true;
+    setIsExecuting(true);
 
     const currentFiles = filesRef.current;
     const currentPreviews = previewsRef.current;
@@ -125,11 +143,21 @@ export function useRenameExecutor(
       const tempPath = file.path + ".rntmp." + crypto.randomUUID();
 
       try {
-        // Phase 1: 原文件 → UUID 临时名
-        await rename(file.path, tempPath);
+        // Phase 1: 原文件 → UUID 临时名（带超时）
+        await withTimeout(rename(file.path, tempPath), 10000);
 
-        // Phase 2: UUID 临时名 → 最终名
-        await rename(tempPath, finalPath);
+        // Phase 2: UUID 临时名 → 最终名（带超时）
+        try {
+          await withTimeout(rename(tempPath, finalPath), 10000);
+        } catch (phase2Err) {
+          // Phase 2 失败：尝试回滚 Phase 1（恢复原文件名）
+          try {
+            await rename(tempPath, file.path);
+          } catch {
+            // 回滚也失败，文件可能已丢失
+          }
+          throw phase2Err;
+        }
 
         results[preview.fileId] = "success";
 
@@ -172,12 +200,13 @@ export function useRenameExecutor(
     }
 
     setIsExecuting(false);
-  }, [isExecuting, onFileNamesUpdated]);
+    executingRef.current = false;
+  }, [onFileNamesUpdated]);
 
   const undo = useCallback(async (): Promise<void> => {
     // 重复点击防护
-    if (isExecuting) return;
-
+    if (executingRef.current) return;
+    executingRef.current = true;
     setIsExecuting(true);
 
     try {
@@ -185,6 +214,7 @@ export function useRenameExecutor(
       if (!snapshot) {
         console.error("No undo snapshot available");
         setIsExecuting(false);
+        executingRef.current = false;
         return;
       }
 
@@ -213,11 +243,19 @@ export function useRenameExecutor(
             extension: origExtension,
           });
         } catch (err) {
-          // 继续处理下一个文件，最大化恢复
+          // 恢复失败：仍用 originalPath 更新列表，确保路径一致
           console.error(
             `Failed to restore file ${entry.fileId}:`,
             err
           );
+          const origName =
+            entry.originalPath.split("/").pop() || entry.originalPath;
+          const extMatch = origName.match(/\.([^.]+)$/);
+          restoreMap.set(entry.fileId, {
+            path: entry.originalPath,
+            name: origName,
+            extension: extMatch ? extMatch[1] : "",
+          });
         }
       }
 
@@ -236,7 +274,8 @@ export function useRenameExecutor(
     }
 
     setIsExecuting(false);
-  }, [isExecuting, onFileNamesUpdated]);
+    executingRef.current = false;
+  }, [onFileNamesUpdated]);
 
   const resetExecution = useCallback((): void => {
     setHasExecuted(false);

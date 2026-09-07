@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { stat, readDir } from "@tauri-apps/plugin-fs";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -10,6 +10,8 @@ const FILE_LIMIT = 100;
 export function useFileList() {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const filesLengthRef = useRef(0);
+  filesLengthRef.current = files.length;
 
   const fetchMetadata = useCallback(async (paths: string[]): Promise<FileItem[]> => {
     const items: FileItem[] = [];
@@ -22,7 +24,7 @@ export function useFileList() {
         const extension = extMatch ? extMatch[1] : "";
 
         items.push({
-          id: `${path}-${Date.now()}-${Math.random()}`,
+          id: `${path}-${crypto.randomUUID()}`,
           path,
           name,
           extension,
@@ -39,7 +41,7 @@ export function useFileList() {
 
   const addFiles = useCallback(
     async (paths: string[]) => {
-      const remaining = FILE_LIMIT - files.length;
+      const remaining = FILE_LIMIT - filesLengthRef.current;
       if (remaining <= 0) {
         alert(`已达到最大文件数量限制 (${FILE_LIMIT})`);
         return;
@@ -54,7 +56,7 @@ export function useFileList() {
         alert(`已添加 ${remaining} 个文件。超出限制的文件未添加。`);
       }
     },
-    [files.length, fetchMetadata]
+    [fetchMetadata]
   );
 
   const removeFile = useCallback((fileId: string) => {

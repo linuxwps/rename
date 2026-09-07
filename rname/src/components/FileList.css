@@ -17,10 +17,10 @@
 .file-table th {
   text-align: left;
   padding: 8px;
-  background-color: #f5f5f5;
-  border-bottom: 1px solid #ddd;
+  background-color: var(--color-bg-light);
+  border-bottom: 1px solid var(--color-border);
   font-weight: 600;
-  color: #333;
+  color: var(--color-text);
   position: relative;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -34,7 +34,7 @@
 
 .file-table td {
   padding: 8px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--color-border-light);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -68,7 +68,7 @@
 }
 
 .col-resize-handle:hover {
-  background-color: #007AFF;
+  background-color: var(--color-primary);
 }
 
 .col-resize-handle::after {
@@ -78,7 +78,7 @@
   right: 3px;
   height: 50%;
   width: 1px;
-  background: #ccc;
+  background: var(--color-disabled);
 }
 
 .col-resize-handle:hover::after {
@@ -88,7 +88,7 @@
 .remove-button {
   background: none;
   border: none;
-  color: #999;
+  color: var(--color-text-muted);
   cursor: pointer;
   font-size: 14px;
   padding: 4px 8px;
@@ -98,7 +98,7 @@
 
 .remove-button:hover {
   background-color: #ffebee;
-  color: #d32f2f;
+  color: var(--color-error);
 }
 
 tr.conflict-row {
@@ -118,14 +118,14 @@ tr.conflict-row td {
 }
 
 .result-indicator--success {
-  color: #155724;
+  color: var(--color-success);
 }
 
 .result-indicator--fail {
-  color: #d32f2f;
+  color: var(--color-error);
 }
 
 .preview-placeholder {
-  color: #ccc;
+  color: var(--color-disabled);
   font-size: 13px;
 }

@@ -1,7 +1,5 @@
-import type { RenameModeStates } from "../../types/rename";
+import type { RenameModeStates, TabKey } from "../../types/rename";
 import "./RenameTabBar.css";
-
-type TabKey = "sequential" | "regex" | "prefix" | "suffix" | "extension" | "replace";
 
 interface RenameTabBarProps {
   modeStates: RenameModeStates;

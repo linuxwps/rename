@@ -23,7 +23,7 @@ const SNAPSHOT_FILENAME = "rname-undo-snapshot.json";
  */
 async function getSnapshotPath(): Promise<string> {
   const dataDir = await appLocalDataDir();
-  return `${dataDir}${SNAPSHOT_FILENAME}`;
+  return `${dataDir}/${SNAPSHOT_FILENAME}`;
 }
 
 /**
@@ -64,6 +64,14 @@ export async function loadUndoSnapshot(): Promise<UndoSnapshot | null> {
     if (!parsed.files || !Array.isArray(parsed.files) || !parsed.timestamp) {
       console.error("Invalid undo snapshot format");
       return null;
+    }
+
+    // 逐条验证必要字段
+    for (const entry of parsed.files) {
+      if (!entry.fileId || !entry.originalPath || !entry.tempPath || !entry.finalPath) {
+        console.error("Invalid undo snapshot entry:", entry);
+        return null;
+      }
     }
 
     return parsed;

@@ -13,14 +13,15 @@ const COLUMNS = [
   { key: "actions", label: "" },
 ];
 
+let cachedCtx: CanvasRenderingContext2D | null = null;
+
 function measureText(text: string, bold: boolean = true): number {
-  const el = document.createElement("span");
-  el.style.cssText = `position:absolute;visibility:hidden;white-space:nowrap;font-size:13px;font-weight:${bold ? 600 : 400};padding:0 8px`;
-  el.textContent = text || "-";
-  document.body.appendChild(el);
-  const w = el.offsetWidth;
-  document.body.removeChild(el);
-  return w;
+  if (!cachedCtx) {
+    const canvas = document.createElement("canvas");
+    cachedCtx = canvas.getContext("2d")!;
+  }
+  cachedCtx.font = `${bold ? 600 : 400} 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+  return cachedCtx.measureText(text || "-").width + 16; // +16 for padding
 }
 
 interface FileListProps {
@@ -112,28 +113,38 @@ export function FileList({ files, previews, onRemoveFile, executionResults, exec
   );
 
   useEffect(() => {
+    let animFrameId: number | null = null;
+    let pendingW: number | null = null;
+    let pendingKey: string = "";
+
     const handleMouseMove = (e: MouseEvent) => {
       if (!dragRef.current) return;
       const { key, startX, startW, minW, maxW } = dragRef.current;
       const diff = e.clientX - startX;
       const newW = Math.max(minW, Math.min(maxW, startW + diff));
-      document.querySelectorAll(`[data-col="${key}"]`).forEach((el) => {
-        (el as HTMLElement).style.width = `${newW}px`;
-        (el as HTMLElement).style.maxWidth = `${newW}px`;
-      });
+      pendingW = newW;
+      pendingKey = key;
+      if (animFrameId === null) {
+        animFrameId = requestAnimationFrame(() => {
+          if (pendingKey && pendingW !== null) {
+            const w = pendingW;
+            setColWidths((prev) => ({ ...prev, [pendingKey]: w }));
+          }
+          animFrameId = null;
+          pendingW = null;
+          pendingKey = "";
+        });
+      }
     };
     const handleMouseUp = () => {
       if (!dragRef.current) return;
       const { key, minW, maxW } = dragRef.current;
-      const th = document.querySelector(`th[data-col="${key}"]`) as HTMLElement;
-      if (th) {
-        const finalW = Math.max(minW, Math.min(maxW, th.offsetWidth));
-        setColWidths((prev) => ({ ...prev, [key]: finalW }));
-        document.querySelectorAll(`[data-col="${key}"]`).forEach((el) => {
-          (el as HTMLElement).style.width = `${finalW}px`;
-          (el as HTMLElement).style.maxWidth = `${finalW}px`;
-        });
+      if (animFrameId !== null) {
+        cancelAnimationFrame(animFrameId);
+        animFrameId = null;
       }
+      const finalW = pendingW ? Math.max(minW, Math.min(maxW, pendingW)) : minW;
+      setColWidths((prev) => ({ ...prev, [key]: finalW }));
       dragRef.current = null;
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
@@ -143,6 +154,7 @@ export function FileList({ files, previews, onRemoveFile, executionResults, exec
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
+      if (animFrameId !== null) cancelAnimationFrame(animFrameId);
     };
   }, []);
 

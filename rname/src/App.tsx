@@ -3,6 +3,7 @@ import { useFileList } from "./hooks/useFileList";
 import { useRenameEngine } from "./hooks/useRenameEngine";
 import { useRenameExecutor } from "./hooks/useRenameExecutor";
 import { useDebounce } from "./hooks/useDebounce";
+import { usePrevious } from "./hooks/usePrevious";
 import { FileDropZone } from "./components/FileDropZone";
 import { RenamePanel } from "./components/rename/RenamePanel";
 import { SequentialForm } from "./components/rename/SequentialForm";
@@ -12,10 +13,8 @@ import { SuffixForm } from "./components/rename/SuffixForm";
 import { ExtensionForm } from "./components/rename/ExtensionForm";
 import { ReplaceForm } from "./components/rename/ReplaceForm";
 import { Toast, type ToastType } from "./components/rename/Toast";
-import type { RenameModeStates, FileItemUpdate } from "./types/rename";
+import type { RenameModeStates, FileItemUpdate, TabKey } from "./types/rename";
 import "./App.css";
-
-type TabKey = "sequential" | "regex" | "prefix" | "suffix" | "extension" | "replace";
 
 function App() {
   const { files, isDragging, removeFile, clearFiles, openFilePicker, openFolderPicker, updateFileNames } =
@@ -84,15 +83,11 @@ function App() {
     };
   }, []);
 
-  // Toast state
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [toastType, setToastType] = useState<ToastType>("success");
-  const [toastKey, setToastKey] = useState(0);
+  // Toast state (merged)
+  const [toast, setToast] = useState<{ message: string; type: ToastType; key: number } | null>(null);
 
   const showToast = useCallback((message: string, type: ToastType) => {
-    setToastMessage(message);
-    setToastType(type);
-    setToastKey((k) => k + 1);
+    setToast((prev) => ({ message, type, key: (prev?.key ?? 0) + 1 }));
   }, []);
 
   // Execution state via useRenameExecutor
@@ -124,9 +119,9 @@ function App() {
   }, [undo]);
 
   // Toast on execution complete
-  const prevExecutedRef = useRef(false);
+  const prevExecuted = usePrevious(hasExecuted);
   useEffect(() => {
-    if (hasExecuted && !prevExecutedRef.current) {
+    if (hasExecuted && !prevExecuted) {
       const failCount = Object.values(executionResults).filter((r) => r === "fail").length;
       const successCount = Object.values(executionResults).filter((r) => r === "success").length;
 
@@ -139,92 +134,82 @@ function App() {
         showToast(`重命名失败：${firstError}`, "error");
       }
     }
-    prevExecutedRef.current = hasExecuted;
-  }, [hasExecuted, executionResults, executionErrors, showToast]);
+  }, [hasExecuted, prevExecuted, executionResults, executionErrors, showToast]);
 
-  // Toast when execution finishes but all files failed (hasExecuted stays false)
-  const prevIsExecutingRef = useRef(false);
+  // Toast when execution finishes but all files failed
+  const prevIsExecuting = usePrevious(isExecuting);
   useEffect(() => {
-    if (prevIsExecutingRef.current && !isExecuting) {
+    if (prevIsExecuting && !isExecuting) {
       const errorKeys = Object.keys(executionErrors);
       if (errorKeys.length > 0 && !hasExecuted) {
         const firstError = executionErrors[errorKeys[0]] || "未知错误";
         showToast(`重命名失败：${firstError}`, "error");
       }
     }
-    prevIsExecutingRef.current = isExecuting;
-  }, [isExecuting, executionErrors, hasExecuted, showToast]);
+  }, [isExecuting, prevIsExecuting, executionErrors, hasExecuted, showToast]);
 
   // Toast on undo complete
-  const prevHasExecutedRef = useRef(hasExecuted);
+  const prevHasExecuted = usePrevious(hasExecuted);
   useEffect(() => {
-    if (!hasExecuted && prevHasExecutedRef.current) {
+    if (!hasExecuted && prevHasExecuted) {
       showToast("已撤销重命名", "info");
     }
-    prevHasExecutedRef.current = hasExecuted;
-  }, [hasExecuted, showToast]);
+  }, [hasExecuted, prevHasExecuted, showToast]);
 
   // File list change resets execution state
-  const prevFilesLengthRef = useRef(files.length);
+  const prevFilesLength = usePrevious(files.length);
   useEffect(() => {
-    if (hasExecuted && files.length !== prevFilesLengthRef.current) {
+    if (hasExecuted && files.length !== prevFilesLength) {
       resetExecution();
     }
-    prevFilesLengthRef.current = files.length;
-  }, [files.length, hasExecuted, resetExecution]);
+  }, [files.length, prevFilesLength, hasExecuted, resetExecution]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const mod = e.metaKey || e.ctrlKey;
+      if (mod && e.key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        if (hasExecuted && !isExecuting) handleUndo();
+      } else if (e.key === "Enter" && !mod) {
+        e.preventDefault();
+        if (!isExecuting && previews.length > 0 && totalConflicts === 0) handleExecute();
+      } else if (mod && e.key === "o") {
+        e.preventDefault();
+        openFilePicker();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [hasExecuted, isExecuting, previews.length, totalConflicts, handleUndo, handleExecute, openFilePicker]);
 
   const previewMap = useMemo(() => new Map(previews.map((p) => [p.fileId, p])), [previews]);
 
+  const activeFormConfig = activeTabForm ? modeStates[activeTabForm] : undefined;
+
   const activeFormComponent = useMemo(() => {
-    if (!activeTabForm) return undefined;
+    if (!activeTabForm || !activeFormConfig) return undefined;
+
+    const onChange = (p: Partial<RenameModeStates[typeof activeTabForm]>) =>
+      onUpdateModeConfig(activeTabForm, p);
 
     switch (activeTabForm) {
       case "sequential":
-        return (
-          <SequentialForm
-            config={modeStates.sequential}
-            onChange={(p) => onUpdateModeConfig("sequential", p)}
-          />
-        );
+        return <SequentialForm config={modeStates.sequential} onChange={onChange as (p: Partial<RenameModeStates["sequential"]>) => void} />;
       case "regex":
-        return (
-          <RegexForm
-            config={modeStates.regex}
-            onChange={(p) => onUpdateModeConfig("regex", p)}
-          />
-        );
+        return <RegexForm config={modeStates.regex} onChange={onChange as (p: Partial<RenameModeStates["regex"]>) => void} />;
       case "prefix":
-        return (
-          <PrefixForm
-            config={modeStates.prefix}
-            onChange={(p) => onUpdateModeConfig("prefix", p)}
-          />
-        );
+        return <PrefixForm config={modeStates.prefix} onChange={onChange as (p: Partial<RenameModeStates["prefix"]>) => void} />;
       case "suffix":
-        return (
-          <SuffixForm
-            config={modeStates.suffix}
-            onChange={(p) => onUpdateModeConfig("suffix", p)}
-          />
-        );
+        return <SuffixForm config={modeStates.suffix} onChange={onChange as (p: Partial<RenameModeStates["suffix"]>) => void} />;
       case "extension":
-        return (
-          <ExtensionForm
-            config={modeStates.extension}
-            onChange={(p) => onUpdateModeConfig("extension", p)}
-          />
-        );
+        return <ExtensionForm config={modeStates.extension} onChange={onChange as (p: Partial<RenameModeStates["extension"]>) => void} />;
       case "replace":
-        return (
-          <ReplaceForm
-            config={modeStates.replace}
-            onChange={(p) => onUpdateModeConfig("replace", p)}
-          />
-        );
+        return <ReplaceForm config={modeStates.replace} onChange={onChange as (p: Partial<RenameModeStates["replace"]>) => void} />;
       default:
         return undefined;
     }
-  }, [activeTabForm, modeStates, onUpdateModeConfig]);
+  }, [activeTabForm, activeFormConfig, onUpdateModeConfig]);
 
   return (
     <div className="app">
@@ -259,10 +244,10 @@ function App() {
         />
       </div>
       <Toast
-        key={toastKey}
-        toast={toastMessage ? { message: toastMessage, type: toastType } : null}
-        duration={toastType === "error" || toastType === "warning" ? 5000 : 3000}
-        onDismiss={() => setToastMessage(null)}
+        key={toast?.key ?? 0}
+        toast={toast ? { message: toast.message, type: toast.type } : null}
+        duration={toast?.type === "error" || toast?.type === "warning" ? 5000 : 3000}
+        onDismiss={() => setToast(null)}
       />
     </div>
   );

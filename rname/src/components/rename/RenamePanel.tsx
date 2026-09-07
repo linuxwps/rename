@@ -1,11 +1,10 @@
+import { memo } from "react";
 import type { FileItem } from "../../types/file";
-import type { RenameModeStates } from "../../types/rename";
+import type { RenameModeStates, TabKey } from "../../types/rename";
 import { ConflictBanner } from "./ConflictBanner";
 import { RenameTabBar } from "./RenameTabBar";
 import { ActionBar } from "./ActionBar";
 import "./RenamePanel.css";
-
-type TabKey = "sequential" | "regex" | "prefix" | "suffix" | "extension" | "replace";
 
 interface RenamePanelProps {
   files: FileItem[];
@@ -23,7 +22,7 @@ interface RenamePanelProps {
   onClearFiles: () => void;
 }
 
-export function RenamePanel({
+export const RenamePanel = memo(function RenamePanel({
   files,
   modeStates,
   onToggleMode,
@@ -73,4 +72,4 @@ export function RenamePanel({
       )}
     </div>
   );
-}
+});
