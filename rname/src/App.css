@@ -1,19 +1,33 @@
 :root {
-  --color-primary: #007AFF;
-  --color-primary-shadow: rgba(0, 122, 255, 0.2);
-  --color-error: #d32f2f;
-  --color-success: #155724;
-  --color-warning: #ffc107;
-  --color-text: #333;
-  --color-text-muted: #999;
-  --color-text-light: #666;
-  --color-border: #ddd;
-  --color-border-light: #eee;
-  --color-bg: #fafafa;
-  --color-bg-hover: #f0f0f0;
-  --color-bg-light: #f5f5f5;
-  --color-bg-input: #fff;
-  --color-disabled: #ccc;
+  --color-primary: #0071e3;
+  --color-primary-hover: #0077ED;
+  --color-primary-shadow: rgba(0, 113, 227, 0.12);
+  --color-primary-ring: rgba(0, 113, 227, 0.25);
+  --color-error: #e53e3e;
+  --color-success: #059669;
+  --color-warning: #d97706;
+  --color-text: #1d1d1f;
+  --color-text-muted: #86868b;
+  --color-text-light: #6e6e73;
+  --color-border: #d2d2d7;
+  --color-border-light: #e8e8ed;
+  --color-bg: #ffffff;
+  --color-bg-secondary: #f5f5f7;
+  --color-bg-tertiary: #fbfbfd;
+  --color-bg-hover: rgba(0, 0, 0, 0.04);
+  --color-bg-active: rgba(0, 0, 0, 0.06);
+  --color-bg-input: #ffffff;
+  --color-bg-overlay: rgba(255, 255, 255, 0.82);
+  --color-disabled: #c7c7cc;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.06), 0 0 1px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.08), 0 0 1px rgba(0, 0, 0, 0.06);
+  --shadow-toast: 0 8px 32px rgba(0, 0, 0, 0.12), 0 0 1px rgba(0, 0, 0, 0.08);
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --transition-fast: 120ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  --transition-normal: 200ms cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
 .app * {
@@ -23,7 +37,11 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: var(--color-text);
+  background: var(--color-bg);
 }
 
 .app {
@@ -31,11 +49,12 @@ body {
   height: 100vh;
   display: flex;
   flex-direction: column;
+  background: var(--color-bg);
 }
 
 .top-panel {
   min-height: 0;
-  padding: 16px 16px 0 16px;
+  padding: 12px 12px 0 12px;
   overflow: hidden;
 }
 
@@ -53,22 +72,24 @@ body {
   position: absolute;
   left: 50%;
   top: 2px;
-  width: 40px;
+  width: 36px;
   height: 2px;
-  background: var(--color-disabled);
+  background: var(--color-border);
   border-radius: 1px;
   transform: translateX(-50%);
+  transition: background var(--transition-normal), width var(--transition-normal);
 }
 
 .resize-handle:hover::after {
   background: var(--color-primary);
+  width: 48px;
 }
 
 .bottom-panel {
   flex: 1;
   min-height: 0;
-  padding: 16px;
-  background-color: var(--color-bg);
+  padding: 12px;
+  background-color: var(--color-bg-secondary);
   border-top: 1px solid var(--color-border-light);
   overflow: hidden;
 }

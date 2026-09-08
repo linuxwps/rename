@@ -16,16 +16,20 @@
 
 .file-table th {
   text-align: left;
-  padding: 8px;
-  background-color: var(--color-bg-light);
-  border-bottom: 1px solid var(--color-border);
-  font-weight: 600;
-  color: var(--color-text);
+  padding: 6px 10px;
+  background-color: var(--color-bg-tertiary);
+  border-bottom: 1px solid var(--color-border-light);
+  font-weight: 500;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
   position: relative;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   box-sizing: border-box;
+  user-select: none;
 }
 
 .file-table th[data-col="actions"] {
@@ -33,12 +37,17 @@
 }
 
 .file-table td {
-  padding: 8px;
+  padding: 7px 10px;
   border-bottom: 1px solid var(--color-border-light);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   box-sizing: border-box;
+  transition: background-color var(--transition-fast);
+}
+
+.file-table tr:hover td {
+  background-color: var(--color-bg-hover);
 }
 
 .file-table td[data-col="actions"] {
@@ -91,29 +100,34 @@
   color: var(--color-text-muted);
   cursor: pointer;
   font-size: 14px;
-  padding: 4px 8px;
-  border-radius: 4px;
-  transition: all 0.2s;
+  padding: 3px 6px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  opacity: 0;
+}
+
+.file-table tr:hover .remove-button {
+  opacity: 1;
 }
 
 .remove-button:hover {
-  background-color: #ffebee;
+  background-color: rgba(229, 62, 62, 0.08);
   color: var(--color-error);
 }
 
 tr.conflict-row {
-  background-color: #fff0f0;
+  background-color: rgba(229, 62, 62, 0.04);
 }
 
 tr.conflict-row td {
-  border-bottom: 1px solid #ffcdd2;
+  border-bottom: 1px solid rgba(229, 62, 62, 0.12);
 }
 
 .result-indicator {
   width: 32px;
   text-align: center;
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 500;
   display: inline-block;
 }
 
