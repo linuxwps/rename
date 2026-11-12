@@ -2,6 +2,11 @@
 
 批量文件重命名工具，基于 Tauri v2 构建。
 
+[![Latest release](https://img.shields.io/github/v/release/linuxwps/rename)](https://github.com/linuxwps/rename/releases/latest)
+[![Build](https://github.com/linuxwps/rename/actions/workflows/build.yml/badge.svg)](https://github.com/linuxwps/rename/actions/workflows/build.yml)
+
+最新版本：**v1.2.0** · [查看 Release 与下载](https://github.com/linuxwps/rename/releases/tag/v1.2.0)
+
 ## 功能
 
 - **链式重命名规则**：序号、正则、前缀、后缀、扩展名、替换、大小写、照片日期八种规则可自由组合，最多 10 条
@@ -30,17 +35,25 @@
 
 ## 系统要求
 
-| 平台 | 支持 |
-|------|------|
-| macOS 11+ | ✅ (Intel + Apple Silicon)(.dmg) |
-| Windows 10+ | ✅ (.exe)|
-| Linux | ✅ (.deb) |
+| 平台 | 架构 | 安装包 |
+|------|------|--------|
+| macOS 11+ | Apple Silicon | `.dmg` |
+| Windows 10+ | x64 | `.exe` |
+| Linux | amd64 | `.deb` |
+
+当前 `v1.2.0` Release 暂未提供 Intel Mac 安装包。
 
 ## 快速开始
 
 ### 下载
 
-从 [Releases](https://github.com/linuxwps/rename/releases) 下载对应平台的安装包。
+从 [GitHub Releases](https://github.com/linuxwps/rename/releases/latest) 下载对应平台的安装包：
+
+| 平台 | 安装包 |
+|------|--------|
+| macOS（Apple Silicon） | [Rename_1.2.0_aarch64.dmg](https://github.com/linuxwps/rename/releases/download/v1.2.0/Rename_1.2.0_aarch64.dmg) |
+| Windows x64 | [Rename_1.2.0_x64-setup.exe](https://github.com/linuxwps/rename/releases/download/v1.2.0/Rename_1.2.0_x64-setup.exe) |
+| Linux amd64 | [Rename_1.2.0_amd64.deb](https://github.com/linuxwps/rename/releases/download/v1.2.0/Rename_1.2.0_amd64.deb) |
 
 ### 开发
 
@@ -49,8 +62,8 @@
 git clone git@github.com:linuxwps/rename.git
 cd rename/rname
 
-# 安装前端依赖
-npm install
+# 安装依赖
+npm ci
 
 # 运行开发模式
 npm run tauri dev
@@ -61,6 +74,8 @@ npm run tauri dev
 ```bash
 npm run tauri build
 ```
+
+构建产物位于 `rname/src-tauri/target/release/bundle/`。
 
 ### 测试
 
@@ -74,7 +89,7 @@ cd src-tauri && cargo test
 - **桌面框架**：[Tauri v2](https://v2.tauri.app/)
 - **前端**：React 19 + TypeScript + Vite 8
 - **后端**：Rust
-- **CI/CD**：GitHub Actions（macOS .dmg / Windows .exe / Linux .deb）
+- **CI/CD**：GitHub Actions 自动构建并发布 macOS `.dmg`、Windows `.exe`、Linux `.deb`
 
 ## 许可证
 
