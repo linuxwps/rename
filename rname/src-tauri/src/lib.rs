@@ -338,17 +338,17 @@ fn exclusive_rename(source: &Path, destination: &Path) -> Result<(), String> {
 fn exclusive_rename(source: &Path, destination: &Path) -> Result<(), String> {
     use std::{ffi::CString, os::unix::ffi::OsStrExt};
 
-    let source = CString::new(source.as_os_str().as_bytes())
+    let source_path = CString::new(source.as_os_str().as_bytes())
         .map_err(|_| "源文件路径包含无效字符".to_string())?;
-    let destination = CString::new(destination.as_os_str().as_bytes())
+    let destination_path = CString::new(destination.as_os_str().as_bytes())
         .map_err(|_| "目标文件路径包含无效字符".to_string())?;
 
     let result = unsafe {
         libc::renameat2(
             libc::AT_FDCWD,
-            source.as_ptr(),
+            source_path.as_ptr(),
             libc::AT_FDCWD,
-            destination.as_ptr(),
+            destination_path.as_ptr(),
             libc::RENAME_NOREPLACE,
         )
     };
@@ -359,7 +359,7 @@ fn exclusive_rename(source: &Path, destination: &Path) -> Result<(), String> {
 
     let error = std::io::Error::last_os_error();
     if error.raw_os_error() == Some(libc::ENOSYS) {
-        if Path::new(destination).exists() {
+        if destination.exists() {
             return Err("目标文件已存在，已阻止覆盖".into());
         }
         fs::rename(source, destination).map_err(|err| err.to_string())
@@ -521,6 +521,9 @@ pub fn run() {
             read_log_tail
         ])
         .setup(|app| {
+            #[cfg(not(debug_assertions))]
+            let _ = app;
+
             #[cfg(debug_assertions)]
             {
                 app.handle().plugin(
