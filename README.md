@@ -28,9 +28,9 @@
 
 ## 截图
 
-<img width="2158" height="1390" alt="mac_1" src="https://github.com/user-attachments/assets/089ab5a0-63d5-40d2-980e-858fbf151a07" />
-<img width="2158" height="1390" alt="mac_2" src="https://github.com/user-attachments/assets/803ec42e-1443-4e41-bb2f-596f2e478191" />
-<img width="854" height="632" alt="win_1" src="https://github.com/user-attachments/assets/a73612a3-b088-496b-88d8-fdfe2d80d77d" />
+<img width="1200" height="800" alt="ScreenShot_2026-11-12_215723_077@2x" src="https://github.com/user-attachments/assets/2d4b1855-397d-4b9e-8312-5399d96e9463" />
+
+<img width="1200" height="800" alt="ScreenShot_2026-11-12_215841_014@2x" src="https://github.com/user-attachments/assets/51fc2225-2dbc-4588-8153-b17dd7405c34" />
 
 
 ## 系统要求
