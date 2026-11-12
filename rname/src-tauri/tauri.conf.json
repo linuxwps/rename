@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Rename",
-  "version": "1.0.3",
+  "version": "1.2.0",
   "identifier": "com.rname.app",
   "build": {
     "frontendDist": "../dist",
@@ -18,7 +18,13 @@
         "resizable": true,
         "fullscreen": false,
         "minWidth": 800,
-        "minHeight": 600
+        "minHeight": 600,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "trafficLightPosition": {
+          "x": 13,
+          "y": 13
+        }
       }
     ],
     "security": {

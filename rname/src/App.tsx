@@ -12,49 +12,199 @@ import { PrefixForm } from "./components/rename/PrefixForm";
 import { SuffixForm } from "./components/rename/SuffixForm";
 import { ExtensionForm } from "./components/rename/ExtensionForm";
 import { ReplaceForm } from "./components/rename/ReplaceForm";
+import { CaseForm } from "./components/rename/CaseForm";
+import { ExifDateForm } from "./components/rename/ExifDateForm";
 import { Toast, type ToastType } from "./components/rename/Toast";
-import type { RenameModeStates, FileItemUpdate, TabKey } from "./types/rename";
+import { LabeledRuleForm } from "./components/rename/LabeledRuleForm";
+import { LogPanel } from "./components/LogPanel";
+import type {
+  FileItemUpdate,
+  FileSortMode,
+  RenamePreset,
+  RenameRule,
+  RenameRuleConfigMap,
+  TabKey,
+} from "./types/rename";
+import {
+  createRule,
+  cloneRule,
+  hasEffectiveRules,
+  MAX_RENAME_RULES,
+  moveRule,
+  moveRuleById,
+  removeRule,
+} from "./utils/ruleChain";
+import {
+  applyRenamePreset,
+  loadRenamePresets,
+  removeRenamePreset,
+  saveRenamePresets,
+  upsertRenamePreset,
+} from "./utils/presets";
+import { parseCsvPathMappings, toCsv } from "./utils/csv";
+import { exportCsvFile, importCsvFile, writeAppLog } from "./utils/renameService";
+import appIconUrl from "../src-tauri/icons/128x128.png";
 import "./App.css";
 
 function App() {
-  const { files, isDragging, removeFile, clearFiles, openFilePicker, openFolderPicker, updateFileNames } =
+  const { files, isDragging, addFiles, removeFile, clearFiles, openFilePicker, openFolderPicker, updateFileNames, reorderFiles } =
     useFileList();
 
-  const [modeStates, setModeStates] = useState<RenameModeStates>({
-    sequential: { enabled: false, startAt: 1, digits: 3, position: "after" },
-    regex: { enabled: false, pattern: "", replacement: "", caseSensitive: false },
-    prefix: { enabled: false, text: "" },
-    suffix: { enabled: false, text: "" },
-    extension: { enabled: false, mode: "change", newExtension: "" },
-    replace: { enabled: false, findText: "", replaceText: "", caseSensitive: false },
-  });
+  const [rules, setRules] = useState<RenameRule[]>([]);
+  const [selectedRuleId, setSelectedRuleId] = useState<string | null>(null);
+  const [presets, setPresets] = useState<RenamePreset[]>(() =>
+    loadRenamePresets()
+  );
+  const [activePresetId, setActivePresetId] = useState<string | null>(null);
+  const [fileSortMode, setFileSortMode] = useState<FileSortMode>("added");
+  const [selectedFileIds, setSelectedFileIds] = useState<Set<string>>(new Set());
+  const [logsOpen, setLogsOpen] = useState(false);
+  const [csvTargetNames, setCsvTargetNames] = useState<Map<string, string>>(new Map());
+  const knownFileIdsRef = useRef<Set<string>>(new Set());
 
-  const [activeTabForm, setActiveTabForm] = useState<TabKey | null>(null);
-
-  const onToggleMode = useCallback((mode: TabKey) => {
-    setModeStates((prev) => ({
-      ...prev,
-      [mode]: { ...prev[mode], enabled: !prev[mode].enabled },
-    }));
+  useEffect(() => {
+    writeAppLog("info", "Rename 应用已启动");
   }, []);
 
-  const onUpdateModeConfig = useCallback(
-    <K extends TabKey>(mode: K, patch: Partial<RenameModeStates[K]>) => {
-      setModeStates((prev) => ({
-        ...prev,
-        [mode]: { ...prev[mode], ...patch },
-      }));
+  useEffect(() => {
+    const currentIds = new Set(files.map((file) => file.id));
+    const newFileIds = [...currentIds].filter(
+      (fileId) => !knownFileIdsRef.current.has(fileId)
+    );
+
+    setSelectedFileIds((previous) => {
+      const next = new Set(
+        [...previous].filter((fileId) => currentIds.has(fileId))
+      );
+      for (const fileId of newFileIds) next.add(fileId);
+      return next;
+    });
+    knownFileIdsRef.current = currentIds;
+  }, [files]);
+
+  const displayedFiles = useMemo(() => {
+    if (fileSortMode === "added" || fileSortMode === "manual") return files;
+
+    return [...files].sort((left, right) => {
+      const result = left.name.localeCompare(right.name, "zh-CN", {
+        numeric: true,
+        sensitivity: "base",
+      });
+      return fileSortMode === "ascending" ? result : -result;
+    });
+  }, [fileSortMode, files]);
+
+  const selectedDisplayedFiles = useMemo(
+    () => displayedFiles.filter((file) => selectedFileIds.has(file.id)),
+    [displayedFiles, selectedFileIds]
+  );
+  const hasSelectedCsvTargets = useMemo(
+    () => selectedDisplayedFiles.some((file) => csvTargetNames.has(file.path)),
+    [csvTargetNames, selectedDisplayedFiles]
+  );
+
+  const onToggleSelected = useCallback((fileId: string) => {
+    setSelectedFileIds((previous) => {
+      const next = new Set(previous);
+      if (next.has(fileId)) next.delete(fileId);
+      else next.add(fileId);
+      return next;
+    });
+  }, []);
+
+  const onToggleAll = useCallback(() => {
+    setSelectedFileIds((previous) =>
+      previous.size === displayedFiles.length
+        ? new Set()
+        : new Set(displayedFiles.map((file) => file.id))
+    );
+  }, [displayedFiles]);
+
+  const onAddRule = useCallback((type: TabKey) => {
+    setRules((prev) => {
+      if (prev.length >= MAX_RENAME_RULES) return prev;
+      const rule = createRule(type);
+      setSelectedRuleId(rule.id);
+      return [...prev, rule];
+    });
+  }, []);
+
+  const onToggleRule = useCallback((ruleId: string) => {
+    setRules((prev) =>
+      prev.map((rule) =>
+        rule.id === ruleId ? { ...rule, enabled: !rule.enabled } : rule
+      )
+    );
+  }, []);
+
+  const onUpdateRuleConfig = useCallback(
+    <K extends TabKey>(
+      ruleId: string,
+      type: K,
+      patch: Partial<RenameRuleConfigMap[K]>
+    ) => {
+      setRules((prev) =>
+        prev.map((rule) => {
+          if (rule.id !== ruleId || rule.type !== type) {
+            return rule;
+          }
+          return {
+            ...rule,
+            config: { ...rule.config, ...patch },
+          } as RenameRule;
+        })
+      );
     },
     []
   );
 
-  const debouncedModes = useDebounce(modeStates, 300);
+  const onRemoveRule = useCallback((ruleId: string) => {
+    setRules((prev) => removeRule(prev, ruleId));
+  }, []);
 
-  const { previews, totalConflicts } = useRenameEngine(files, debouncedModes);
+  const onSelectRule = useCallback((ruleId: string | null) => {
+    setSelectedRuleId(ruleId);
+  }, []);
+
+  const onDuplicateRule = useCallback((ruleId: string) => {
+    setRules((prev) => {
+      const index = prev.findIndex((rule) => rule.id === ruleId);
+      if (index < 0 || prev.length >= MAX_RENAME_RULES) return prev;
+      const duplicate = cloneRule(prev[index]);
+      setSelectedRuleId(duplicate.id);
+      const next = [...prev];
+      next.splice(index + 1, 0, duplicate);
+      return next;
+    });
+  }, []);
+
+  const onClearRules = useCallback(() => {
+    setRules([]);
+    setSelectedRuleId(null);
+  }, []);
+
+  const onMoveRule = useCallback((ruleId: string, offset: number) => {
+    setRules((prev) => moveRuleById(prev, ruleId, offset));
+  }, []);
+
+  const onMoveRuleTo = useCallback((fromIndex: number, toIndex: number) => {
+    setRules((prev) => moveRule(prev, fromIndex, toIndex));
+    setActivePresetId(null);
+  }, []);
+
+  const debouncedRules = useDebounce(rules, 300);
+  const isPreviewPending = debouncedRules !== rules;
+
+  const { previews, totalConflicts } = useRenameEngine(
+    selectedDisplayedFiles,
+    debouncedRules,
+    csvTargetNames
+  );
 
   // Resizable split panel
-  const [topRatio, setTopRatio] = useState(0.7);
+  const [topRatio, setTopRatio] = useState(0.52);
   const isResizing = useRef(false);
+  const appContentRef = useRef<HTMLDivElement>(null);
 
   const handleResizeStart = useCallback(() => {
     isResizing.current = true;
@@ -65,8 +215,11 @@ function App() {
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isResizing.current) return;
-      const ratio = e.clientY / window.innerHeight;
-      setTopRatio(Math.max(0.2, Math.min(0.8, ratio)));
+      const content = appContentRef.current;
+      if (!content) return;
+      const bounds = content.getBoundingClientRect();
+      const ratio = (e.clientY - bounds.top) / bounds.height;
+      setTopRatio(Math.max(0.3, Math.min(0.78, ratio)));
     };
     const handleMouseUp = () => {
       if (isResizing.current) {
@@ -87,13 +240,62 @@ function App() {
   const [toast, setToast] = useState<{ message: string; type: ToastType; key: number } | null>(null);
 
   const showToast = useCallback((message: string, type: ToastType) => {
+    writeAppLog(type === "error" ? "error" : type === "warning" ? "warn" : "info", message);
     setToast((prev) => ({ message, type, key: (prev?.key ?? 0) + 1 }));
   }, []);
+
+  const onSavePreset = useCallback(
+    (name: string) => {
+      try {
+        const result = upsertRenamePreset(presets, name, rules);
+        setPresets(result.presets);
+        saveRenamePresets(result.presets);
+        setActivePresetId(result.preset.id);
+        showToast(
+          result.created ? `已保存预设“${result.preset.name}”` : `已更新预设“${result.preset.name}”`,
+          "success"
+        );
+      } catch (error) {
+        showToast(
+          error instanceof Error ? error.message : "保存预设失败",
+          "error"
+        );
+      }
+    },
+    [presets, rules, showToast]
+  );
+
+  const onLoadPreset = useCallback((presetId: string) => {
+    const preset = presets.find((item) => item.id === presetId);
+    if (!preset) return;
+    setRules(applyRenamePreset(preset));
+    setSelectedRuleId(null);
+    setActivePresetId(preset.id);
+    showToast(`已加载预设“${preset.name}”`, "info");
+  }, [presets, showToast]);
+
+  const onDeletePreset = useCallback(
+    (presetId: string) => {
+      const preset = presets.find((item) => item.id === presetId);
+      const next = removeRenamePreset(presets, presetId);
+      setPresets(next);
+      saveRenamePresets(next);
+      if (activePresetId === presetId) {
+        setActivePresetId(null);
+      }
+      showToast(
+        preset ? `已删除预设“${preset.name}”` : "已删除预设",
+        "info"
+      );
+    },
+    [activePresetId, presets, showToast]
+  );
 
   // Execution state via useRenameExecutor
   const onFileNamesUpdated = useCallback(
     (updates: Map<string, FileItemUpdate>) => {
       updateFileNames(updates);
+      setCsvTargetNames(new Map());
     },
     [updateFileNames]
   );
@@ -106,13 +308,13 @@ function App() {
     execute,
     undo,
     resetExecution,
-  } = useRenameExecutor(files, previews, onFileNamesUpdated);
+  } = useRenameExecutor(selectedDisplayedFiles, previews, onFileNamesUpdated);
 
   // Handlers
   const handleExecute = useCallback(async () => {
-    if (isExecuting) return;
+    if (isExecuting || isPreviewPending) return;
     await execute();
-  }, [execute, isExecuting]);
+  }, [execute, isExecuting, isPreviewPending]);
 
   const handleUndo = useCallback(async () => {
     await undo();
@@ -173,7 +375,15 @@ function App() {
         if (hasExecuted && !isExecuting) handleUndo();
       } else if (e.key === "Enter" && !mod) {
         e.preventDefault();
-        if (!isExecuting && previews.length > 0 && totalConflicts === 0) handleExecute();
+        if (
+          !isExecuting &&
+          !isPreviewPending &&
+          previews.length > 0 &&
+          totalConflicts === 0 &&
+          (hasEffectiveRules(rules) || hasSelectedCsvTargets)
+        ) {
+          handleExecute();
+        }
       } else if (mod && e.key === "o") {
         e.preventDefault();
         openFilePicker();
@@ -181,68 +391,183 @@ function App() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [hasExecuted, isExecuting, previews.length, totalConflicts, handleUndo, handleExecute, openFilePicker]);
+  }, [hasExecuted, isExecuting, isPreviewPending, previews.length, totalConflicts, rules, hasSelectedCsvTargets, handleUndo, handleExecute, openFilePicker]);
 
   const previewMap = useMemo(() => new Map(previews.map((p) => [p.fileId, p])), [previews]);
 
-  const activeFormConfig = activeTabForm ? modeStates[activeTabForm] : undefined;
+  const handleExportCsv = useCallback(async () => {
+    if (selectedDisplayedFiles.length === 0) return;
+    try {
+      const rows: string[][] = [[
+        "原路径",
+        "原文件名",
+        "新文件名",
+        "大小（字节）",
+        "修改时间",
+        "状态",
+      ]];
+      for (const file of selectedDisplayedFiles) {
+        const preview = previewMap.get(file.id);
+        const status = preview?.validationError
+          ? `错误：${preview.validationError}`
+          : preview?.hasConflict
+            ? "冲突"
+            : "可执行";
+        rows.push([
+          file.path,
+          file.name,
+          preview?.newFullName ?? file.name,
+          String(file.size),
+          file.modifiedAt ? new Date(file.modifiedAt).toLocaleString("zh-CN") : "",
+          status,
+        ]);
+      }
+      const path = await exportCsvFile(toCsv(rows));
+      if (path) showToast(`已导出 ${selectedDisplayedFiles.length} 条重命名计划`, "success");
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "CSV 导出失败", "error");
+    }
+  }, [previewMap, selectedDisplayedFiles, showToast]);
+
+  const handleImportCsv = useCallback(async () => {
+    try {
+      const file = await importCsvFile();
+      if (!file) return;
+      const { paths, targetNames } = parseCsvPathMappings(file.content);
+      if (paths.length === 0) throw new Error("CSV 中没有找到路径列");
+      await addFiles(paths);
+      setCsvTargetNames(targetNames);
+      showToast(
+        targetNames.size > 0
+          ? `已导入 ${paths.length} 条路径，其中 ${targetNames.size} 条带目标文件名`
+          : `已从 CSV 导入 ${paths.length} 条路径`,
+        "success"
+      );
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "CSV 导入失败", "error");
+    }
+  }, [addFiles, showToast]);
+
+  const handleClearFiles = useCallback(() => {
+    clearFiles();
+    setCsvTargetNames(new Map());
+  }, [clearFiles]);
+
+  const selectedRule = rules.find((rule) => rule.id === selectedRuleId);
 
   const activeFormComponent = useMemo(() => {
-    if (!activeTabForm || !activeFormConfig) return undefined;
+    if (!selectedRule) return undefined;
 
-    const onChange = (p: Partial<RenameModeStates[typeof activeTabForm]>) =>
-      onUpdateModeConfig(activeTabForm, p);
+    const handleChange = (patch: Partial<RenameRule["config"]>) => {
+      onUpdateRuleConfig(selectedRule.id, selectedRule.type, patch);
+    };
 
-    switch (activeTabForm) {
+    const removeSelected = () => {
+      setSelectedRuleId(null);
+      onRemoveRule(selectedRule.id);
+    };
+
+    const form = (() => {
+      switch (selectedRule.type) {
       case "sequential":
-        return <SequentialForm config={modeStates.sequential} onChange={onChange as (p: Partial<RenameModeStates["sequential"]>) => void} />;
+        return <SequentialForm config={selectedRule.config} onChange={handleChange} />;
       case "regex":
-        return <RegexForm config={modeStates.regex} onChange={onChange as (p: Partial<RenameModeStates["regex"]>) => void} />;
+        return <RegexForm config={selectedRule.config} onChange={handleChange} />;
       case "prefix":
-        return <PrefixForm config={modeStates.prefix} onChange={onChange as (p: Partial<RenameModeStates["prefix"]>) => void} />;
+        return <PrefixForm config={selectedRule.config} onChange={handleChange} />;
       case "suffix":
-        return <SuffixForm config={modeStates.suffix} onChange={onChange as (p: Partial<RenameModeStates["suffix"]>) => void} />;
+        return <SuffixForm config={selectedRule.config} onChange={handleChange} />;
       case "extension":
-        return <ExtensionForm config={modeStates.extension} onChange={onChange as (p: Partial<RenameModeStates["extension"]>) => void} />;
+        return <ExtensionForm config={selectedRule.config} onChange={handleChange} />;
       case "replace":
-        return <ReplaceForm config={modeStates.replace} onChange={onChange as (p: Partial<RenameModeStates["replace"]>) => void} />;
+        return <ReplaceForm config={selectedRule.config} onChange={handleChange} />;
+      case "case":
+        return <CaseForm config={selectedRule.config} onChange={handleChange} />;
+      case "exif":
+        return <ExifDateForm config={selectedRule.config} onChange={handleChange} />;
       default:
         return undefined;
-    }
-  }, [activeTabForm, activeFormConfig, onUpdateModeConfig]);
+      }
+    })();
+
+    return (
+      <LabeledRuleForm type={selectedRule.type} onRemove={removeSelected}>
+        {form}
+      </LabeledRuleForm>
+    );
+  }, [selectedRule, onRemoveRule, onUpdateRuleConfig]);
 
   return (
     <div className="app">
-      <div className="top-panel" style={{ height: `${topRatio * 100}%` }}>
-        <FileDropZone
-          files={files}
-          isDragging={isDragging}
-          previews={previewMap}
-          onRemoveFile={removeFile}
-          onOpenFilePicker={openFilePicker}
-          onOpenFolderPicker={openFolderPicker}
-          executionResults={executionResults}
-          executionErrors={executionErrors}
+      <header className="app-titlebar" data-tauri-drag-region>
+        <img
+          className="app-titlebar__icon"
+          src={appIconUrl}
+          alt=""
+          draggable={false}
         />
+        <span className="app-titlebar__name" data-tauri-drag-region>
+          Rename
+        </span>
+      </header>
+      <div className="app-content" ref={appContentRef}>
+        <div className="top-panel" style={{ height: `${topRatio * 100}%` }}>
+          <FileDropZone
+            files={displayedFiles}
+            isDragging={isDragging}
+            previews={previewMap}
+            onRemoveFile={removeFile}
+            onOpenFilePicker={openFilePicker}
+            onOpenFolderPicker={openFolderPicker}
+            onImportCsv={() => void handleImportCsv()}
+            onShowLogs={() => setLogsOpen(true)}
+            executionResults={executionResults}
+            executionErrors={executionErrors}
+            sortMode={fileSortMode}
+            onSortModeChange={setFileSortMode}
+            selectedIds={selectedFileIds}
+            onToggleSelected={onToggleSelected}
+            onToggleAll={onToggleAll}
+            onReorder={reorderFiles}
+          />
+        </div>
+        <div className="resize-handle" onMouseDown={handleResizeStart} role="separator" aria-label="调整文件区和规则区高度" aria-orientation="horizontal" />
+        <div className="bottom-panel">
+          <RenamePanel
+            files={displayedFiles}
+            rules={rules}
+            onAddRule={onAddRule}
+            onToggleRule={onToggleRule}
+            onUpdateRuleConfig={onUpdateRuleConfig}
+            selectedRuleId={selectedRuleId}
+            onSelectRule={onSelectRule}
+            onRemoveRule={onRemoveRule}
+            onDuplicateRule={onDuplicateRule}
+            onClearRules={onClearRules}
+            onMoveRule={onMoveRule}
+            onMoveRuleTo={onMoveRuleTo}
+            totalConflicts={totalConflicts}
+            activeFormComponent={activeFormComponent}
+            presets={presets}
+            activePresetId={activePresetId}
+            onSavePreset={onSavePreset}
+            onLoadPreset={onLoadPreset}
+            onDeletePreset={onDeletePreset}
+            isPreviewPending={isPreviewPending}
+            isExecuting={isExecuting}
+            hasExecuted={hasExecuted}
+            onExecute={handleExecute}
+            onUndo={handleUndo}
+            onClearFiles={handleClearFiles}
+            selectedCount={selectedDisplayedFiles.length}
+            onExportCsv={() => void handleExportCsv()}
+            onImportCsv={() => void handleImportCsv()}
+            onShowLogs={() => setLogsOpen(true)}
+            hasCsvTargets={hasSelectedCsvTargets}
+          />
+        </div>
       </div>
-      <div className="resize-handle" onMouseDown={handleResizeStart} />
-      <div className="bottom-panel">
-        <RenamePanel
-          files={files}
-          modeStates={modeStates}
-          onToggleMode={onToggleMode}
-          onUpdateModeConfig={onUpdateModeConfig}
-          activeTabForm={activeTabForm}
-          onSetActiveTabForm={setActiveTabForm}
-          totalConflicts={totalConflicts}
-          activeFormComponent={activeFormComponent}
-          isExecuting={isExecuting}
-          hasExecuted={hasExecuted}
-          onExecute={handleExecute}
-          onUndo={handleUndo}
-          onClearFiles={clearFiles}
-        />
-      </div>
+      <LogPanel open={logsOpen} onClose={() => setLogsOpen(false)} />
       <Toast
         key={toast?.key ?? 0}
         toast={toast ? { message: toast.message, type: toast.type } : null}

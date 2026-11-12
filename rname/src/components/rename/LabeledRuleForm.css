@@ -1,0 +1,40 @@
+.labeled-rule-form {
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.labeled-rule-form__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.labeled-rule-form__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.labeled-rule-form__remove {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.labeled-rule-form__remove:hover {
+  background: rgba(229, 62, 62, 0.08);
+  color: var(--color-error);
+}

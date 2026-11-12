@@ -1,28 +1,32 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import type { FileItem } from "../types/file";
 import type { PreviewResult, ExecutionResult } from "../types/rename";
 import { FileListRow } from "./FileListRow";
+import { computeVisibleRange } from "../utils/listWindow";
 import "./FileList.css";
 
+const ROW_HEIGHT = 34;
+const HEADER_HEIGHT = 34;
+const OVERSCAN = 6;
+
 const COLUMNS = [
+  { key: "select", label: "" },
   { key: "fileName", label: "文件名" },
   { key: "newName", label: "新文件名" },
   { key: "extension", label: "扩展名" },
   { key: "size", label: "大小" },
   { key: "date", label: "修改日期" },
-  { key: "actions", label: "" },
+  { key: "actions", label: "删除" },
 ];
 
-let cachedCtx: CanvasRenderingContext2D | null = null;
-
-function measureText(text: string, bold: boolean = true): number {
-  if (!cachedCtx) {
-    const canvas = document.createElement("canvas");
-    cachedCtx = canvas.getContext("2d")!;
-  }
-  cachedCtx.font = `${bold ? 600 : 400} 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
-  return cachedCtx.measureText(text || "-").width + 16; // +16 for padding
-}
+const MIN_COLUMN_WIDTHS: Record<string, number> = {
+  fileName: 150,
+  newName: 180,
+  extension: 80,
+  size: 76,
+  date: 112,
+};
+const MAX_COLUMN_WIDTH = 640;
 
 interface FileListProps {
   files: FileItem[];
@@ -30,82 +34,106 @@ interface FileListProps {
   onRemoveFile: (fileId: string) => void;
   executionResults?: Record<string, ExecutionResult>;
   executionErrors?: Record<string, string>;
+  selectedIds: Set<string>;
+  onToggleSelected: (fileId: string) => void;
+  onToggleAll: () => void;
+  manualSort: boolean;
+  onReorder?: (fromId: string, toId: string) => void;
 }
 
-export function FileList({ files, previews, onRemoveFile, executionResults, executionErrors }: FileListProps) {
+export function FileList({ files, previews, onRemoveFile, executionResults, executionErrors, selectedIds, onToggleSelected, onToggleAll, manualSort, onReorder }: FileListProps) {
+  const [expandedFileId, setExpandedFileId] = useState<string | null>(null);
   const [colWidths, setColWidths] = useState<Record<string, number>>({});
+  const [scrollTop, setScrollTop] = useState(0);
+  const [viewportHeight, setViewportHeight] = useState(400);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{
     key: string;
     startX: number;
     startW: number;
     minW: number;
     maxW: number;
+    latestW: number;
   } | null>(null);
 
   const [colBounds, setColBounds] = useState<Record<string, { min: number; max: number }>>({});
 
+  const rowOffsets = useMemo(() => {
+    const offsets = new Array<number>(files.length + 1);
+    offsets[0] = 0;
+    for (let index = 0; index < files.length; index += 1) {
+      const preview = previews.get(files[index].id);
+      const detailHeight =
+        expandedFileId === files[index].id && preview
+          ? 16 + preview.ruleSteps.length * 24
+          : 0;
+      offsets[index + 1] = offsets[index] + ROW_HEIGHT + detailHeight;
+    }
+    return offsets;
+  }, [expandedFileId, files, previews]);
+
+  useEffect(() => {
+    const element = scrollRef.current;
+    if (!element) return;
+    const observer = new ResizeObserver(() => {
+      setViewportHeight(element.clientHeight);
+    });
+    observer.observe(element);
+    setViewportHeight(element.clientHeight);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (expandedFileId && !files.some((file) => file.id === expandedFileId)) {
+      setExpandedFileId(null);
+    }
+  }, [expandedFileId, files]);
+
+  const visibleRange = useMemo(() => {
+    return computeVisibleRange(
+      rowOffsets,
+      scrollTop,
+      viewportHeight,
+      HEADER_HEIGHT,
+      OVERSCAN
+    );
+  }, [files.length, rowOffsets, scrollTop, viewportHeight]);
+
   useEffect(() => {
     const bounds: Record<string, { min: number; max: number }> = {};
     for (const col of COLUMNS) {
-      if (!col.label) continue;
-      const headerW = measureText(col.label, true);
-      let maxW = headerW;
-      if (col.key === "fileName") {
-        for (const f of files) {
-          maxW = Math.max(maxW, measureText(f.name, false));
-        }
-      } else if (col.key === "extension") {
-        for (const f of files) {
-          maxW = Math.max(maxW, measureText(f.extension || "-", false));
-        }
-      } else if (col.key === "size") {
-        for (const f of files) {
-          const sizeLabel = f.size >= 1024 * 1024
-            ? `${(f.size / (1024 * 1024)).toFixed(1)} MB`
-            : f.size >= 1024
-              ? `${(f.size / 1024).toFixed(1)} KB`
-              : `${f.size} B`;
-          maxW = Math.max(maxW, measureText(sizeLabel, false));
-        }
-      } else if (col.key === "date") {
-        for (const f of files) {
-          const d = f.modifiedAt ? new Date(f.modifiedAt).toLocaleDateString("zh-CN") : "-";
-          maxW = Math.max(maxW, measureText(d, false));
-        }
-      } else if (col.key === "newName") {
-        for (const [, p] of previews) {
-          maxW = Math.max(maxW, measureText(p.newFullName || p.oldBaseName + "." + p.oldExtension, false));
-        }
-      }
-      bounds[col.key] = { min: headerW, max: maxW };
+      if (!col.label || col.key === "select" || col.key === "actions") continue;
+      bounds[col.key] = {
+        min: MIN_COLUMN_WIDTHS[col.key] ?? 80,
+        max: MAX_COLUMN_WIDTH,
+      };
     }
     setColBounds(bounds);
-  }, [files, previews]);
+  }, []);
 
-  const handleMouseDown = useCallback(
-    (key: string, e: React.MouseEvent) => {
+  const handleResizeStart = useCallback(
+    (key: string, e: React.PointerEvent<HTMLSpanElement>) => {
       e.preventDefault();
-      const bounds = colBounds[key] || { min: 100, max: 400 };
-      const currentW = colWidths[key];
-      if (currentW) {
-        dragRef.current = {
-          key,
-          startX: e.clientX,
-          startW: currentW,
-          minW: bounds.min,
-          maxW: bounds.max,
-        };
-      } else {
-        const th = document.querySelector(`th[data-col="${key}"]`) as HTMLElement;
-        const actualW = th ? th.offsetWidth : bounds.min;
-        dragRef.current = {
-          key,
-          startX: e.clientX,
-          startW: actualW,
-          minW: bounds.min,
-          maxW: bounds.max,
-        };
+      e.stopPropagation();
+      const base = { ...colWidths };
+      for (const col of COLUMNS) {
+        if (!col.label || col.key === "select" || col.key === "actions" || base[col.key]) continue;
+        const header = document.querySelector(
+          `th[data-col="${col.key}"]`
+        ) as HTMLElement | null;
+        if (header) base[col.key] = header.offsetWidth;
       }
+      const bounds = colBounds[key] || { min: 100, max: MAX_COLUMN_WIDTH };
+      const startW = base[key] ?? bounds.min;
+      setColWidths(base);
+      dragRef.current = {
+        key,
+        startX: e.clientX,
+        startW,
+        minW: Math.min(bounds.min, startW),
+        maxW: bounds.max,
+        latestW: startW,
+      };
       document.body.style.cursor = "col-resize";
       document.body.style.userSelect = "none";
     },
@@ -113,48 +141,29 @@ export function FileList({ files, previews, onRemoveFile, executionResults, exec
   );
 
   useEffect(() => {
-    let animFrameId: number | null = null;
-    let pendingW: number | null = null;
-    let pendingKey: string = "";
-
-    const handleMouseMove = (e: MouseEvent) => {
+    const handlePointerMove = (e: PointerEvent) => {
       if (!dragRef.current) return;
       const { key, startX, startW, minW, maxW } = dragRef.current;
       const diff = e.clientX - startX;
       const newW = Math.max(minW, Math.min(maxW, startW + diff));
-      pendingW = newW;
-      pendingKey = key;
-      if (animFrameId === null) {
-        animFrameId = requestAnimationFrame(() => {
-          if (pendingKey && pendingW !== null) {
-            const w = pendingW;
-            setColWidths((prev) => ({ ...prev, [pendingKey]: w }));
-          }
-          animFrameId = null;
-          pendingW = null;
-          pendingKey = "";
-        });
-      }
+      dragRef.current.latestW = newW;
+      setColWidths((prev) => ({ ...prev, [key]: newW }));
     };
-    const handleMouseUp = () => {
+    const finishResize = () => {
       if (!dragRef.current) return;
-      const { key, minW, maxW } = dragRef.current;
-      if (animFrameId !== null) {
-        cancelAnimationFrame(animFrameId);
-        animFrameId = null;
-      }
-      const finalW = pendingW ? Math.max(minW, Math.min(maxW, pendingW)) : minW;
-      setColWidths((prev) => ({ ...prev, [key]: finalW }));
+      const { key, latestW } = dragRef.current;
+      setColWidths((prev) => ({ ...prev, [key]: latestW }));
       dragRef.current = null;
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
     };
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", finishResize);
+    window.addEventListener("pointercancel", finishResize);
     return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-      if (animFrameId !== null) cancelAnimationFrame(animFrameId);
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", finishResize);
+      window.removeEventListener("pointercancel", finishResize);
     };
   }, []);
 
@@ -169,16 +178,36 @@ export function FileList({ files, previews, onRemoveFile, executionResults, exec
 
   return (
     <div className="file-list-container">
+      <div
+        className="file-list-scroll"
+        ref={scrollRef}
+        onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
+      >
       <table className="file-table">
         <thead>
           <tr>
             {COLUMNS.map((col) => (
               <th key={col.key} data-col={col.key} style={getColStyle(col.key)}>
-                {col.label}
-                {col.label && (
+                {col.key === "select" ? (
+                  <input
+                    type="checkbox"
+                    className="file-select-all"
+                    checked={files.length > 0 && selectedIds.size === files.length}
+                    onChange={onToggleAll}
+                    aria-label="全选"
+                    title="全选"
+                  />
+                ) : (
+                  col.label
+                )}
+                {col.label && col.key !== "actions" && (
                   <span
                     className="col-resize-handle"
-                    onMouseDown={(e) => handleMouseDown(col.key, e)}
+                    onPointerDown={(e) => handleResizeStart(col.key, e)}
+                    role="separator"
+                    aria-label={`调整${col.label}列宽`}
+                    aria-orientation="vertical"
+                    title={`拖动调整“${col.label}”列宽`}
                   />
                 )}
               </th>
@@ -186,7 +215,12 @@ export function FileList({ files, previews, onRemoveFile, executionResults, exec
           </tr>
         </thead>
         <tbody>
-          {files.map((file) => (
+          {visibleRange.start > 0 && (
+            <tr className="virtual-spacer" aria-hidden="true">
+              <td colSpan={COLUMNS.length} style={{ height: `${rowOffsets[visibleRange.start]}px` }} />
+            </tr>
+          )}
+          {files.slice(visibleRange.start, visibleRange.end).map((file) => (
             <FileListRow
               key={file.id}
               file={file}
@@ -195,10 +229,29 @@ export function FileList({ files, previews, onRemoveFile, executionResults, exec
               onRemove={onRemoveFile}
               executionResult={executionResults?.[file.id]}
               executionError={executionErrors?.[file.id]}
+              selected={selectedIds.has(file.id)}
+              onToggleSelected={onToggleSelected}
+              manualSort={manualSort}
+              onReorder={onReorder}
+              stepsExpanded={expandedFileId === file.id}
+              onToggleSteps={(fileId) =>
+                setExpandedFileId((current) => (current === fileId ? null : fileId))
+              }
             />
           ))}
+          {visibleRange.end < files.length && (
+            <tr className="virtual-spacer" aria-hidden="true">
+              <td
+                colSpan={COLUMNS.length}
+                style={{
+                  height: `${rowOffsets[files.length] - rowOffsets[visibleRange.end]}px`,
+                }}
+              />
+            </tr>
+          )}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

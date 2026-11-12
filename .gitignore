@@ -14,3 +14,7 @@ rname/dist/
 .DS_Store
 *.dmg
 Rename.app/
+
+# Local edit backups and release artifacts
+*.bak
+release/

@@ -1,5 +1,5 @@
 .rename-form {
-  padding: 4px 0;
+  padding: 0;
 }
 
 .form-row {
@@ -7,6 +7,8 @@
   flex-direction: row;
   gap: 10px;
   align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
 }
 
 .form-group {
@@ -14,7 +16,7 @@
   flex-direction: row;
   align-items: center;
   gap: 6px;
-  flex: 1 1 0;
+  flex: 1 1 180px;
   min-width: 0;
 }
 
@@ -30,7 +32,7 @@
 .form-group input[type="number"] {
   flex: 1;
   min-width: 60px;
-  height: 30px;
+  height: 34px;
   padding: 4px 10px;
   font-size: 13px;
   border: 1px solid var(--color-border);
@@ -48,14 +50,22 @@
 }
 
 .form-group select {
-  height: 30px;
-  padding: 4px 10px;
+  height: 34px;
+  padding: 4px 30px 4px 10px;
   font-size: 13px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   outline: none;
   box-sizing: border-box;
   background: var(--color-bg-input);
+  color: var(--color-text);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23536273' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 10px 6px;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
@@ -113,4 +123,10 @@
   color: var(--color-error);
   font-size: 12px;
   margin-top: 2px;
+}
+
+.form-help {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--color-text-muted);
 }

@@ -3,7 +3,28 @@
   flex-direction: column;
   height: 100%;
   padding: 0;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
+  overflow: hidden;
 }
+
+.rename-workspace-heading {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 16px;
+  padding: 16px 24px 10px;
+}
+
+.rename-workspace-heading h2 {
+  font-size: 16px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.rename-workspace-heading p { color: var(--color-text-muted); font-size: 12px; padding-bottom: 2px; }
 
 .rename-panel-empty {
   display: flex;
@@ -15,15 +36,59 @@
 }
 
 .rename-form-area {
-  padding: 14px 0;
-  padding-bottom: 48px;
+  padding: 20px;
   flex: 1;
-  overflow-y: auto;
+  min-height: 0;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(220px, 1.05fr) minmax(250px, 1.35fr) minmax(195px, 0.85fr);
+  gap: 16px;
+  background: var(--color-bg-tertiary);
 }
+
+.rename-rule-column, .rename-preset-column, .rename-selected-editor {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-gutter: auto;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  padding: 14px 20px;
+}
+
+.rename-rule-column .rule-chain-manager__list { overflow: visible; }
+.rename-preset-column .preset-manager { border: 0; padding: 0; background: transparent; }
+.rename-editor-placeholder { display: grid; place-items: center; }
 
 .rename-form-hint {
   color: var(--color-text-muted);
   font-size: 13px;
   text-align: center;
-  padding: 24px;
+  padding: 12px;
+}
+
+.rename-selected-editor {
+  align-self: stretch;
+}
+
+@media (max-width: 1050px) {
+  .rename-form-area {
+    grid-template-columns: minmax(190px, 1fr) minmax(240px, 1.25fr);
+    overflow-y: auto;
+  }
+  .rename-preset-column {
+    grid-column: 1 / -1;
+    min-height: 145px;
+  }
+}
+
+@media (max-width: 900px) {
+  .rename-form-area {
+    grid-template-columns: minmax(0, 1fr);
+    overflow-y: auto;
+  }
+  .rename-preset-column {
+    grid-column: auto;
+  }
 }

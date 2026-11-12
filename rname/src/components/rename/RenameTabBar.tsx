@@ -1,56 +1,59 @@
-import type { RenameModeStates, TabKey } from "../../types/rename";
+import type { RenameRule, TabKey } from "../../types/rename";
+import {
+  MAX_RENAME_RULES,
+  RULE_META,
+  RULE_TYPES,
+} from "../../utils/ruleChain";
+import { RuleIcon } from "./RuleIcon";
 import "./RenameTabBar.css";
 
 interface RenameTabBarProps {
-  modeStates: RenameModeStates;
-  onToggleMode: (mode: TabKey) => void;
-  activeTabForm: TabKey | null;
-  onSetActiveTabForm: (tab: TabKey | null) => void;
-  hasFiles: boolean;
+  rules: RenameRule[];
+  onAddRule: (type: TabKey) => void;
 }
 
-const TABS: { key: TabKey; label: string; icon: string }[] = [
-  { key: "sequential", label: "时间", icon: "🔢" },
-  { key: "regex", label: "正则", icon: "🔍" },
-  { key: "prefix", label: "前缀", icon: "📎" },
-  { key: "suffix", label: "后缀", icon: "➕" },
-  { key: "extension", label: "扩展名", icon: "📄" },
-  { key: "replace", label: "替换", icon: "🔄" },
-];
-
 export function RenameTabBar({
-  modeStates,
-  onToggleMode,
-  activeTabForm,
-  onSetActiveTabForm,
-  hasFiles,
+  rules,
+  onAddRule,
 }: RenameTabBarProps) {
-  const anyEnabled = Object.values(modeStates).some((m) => m.enabled);
+  const limitReached = rules.length >= MAX_RENAME_RULES;
+  const counts = rules.reduce<Partial<Record<TabKey, number>>>(
+    (result, rule) => {
+      result[rule.type] = (result[rule.type] ?? 0) + 1;
+      return result;
+    },
+    {}
+  );
 
   return (
-    <div className={"rename-tab-bar" + (anyEnabled ? " tab-bar-has-active" : "")}>
-      {TABS.map((tab) => {
-        const enabled = modeStates[tab.key].enabled;
-        const className =
-          "rename-tab" +
-          (enabled ? " tab-active" : "") +
-          (activeTabForm === tab.key ? " tab-form-open" : "") +
-          (!hasFiles ? " tab-disabled" : "");
+    <div className="rename-tab-bar">
+      <span className="rename-tab-bar__label">添加规则</span>
+      {RULE_TYPES.map((type) => {
+        const meta = RULE_META[type];
+        const count = counts[type] ?? 0;
+        const disabled = limitReached;
 
         return (
           <button
-            key={tab.key}
-            className={className}
-            disabled={!hasFiles}
-            onClick={() => {
-              onToggleMode(tab.key);
-              onSetActiveTabForm(tab.key);
-            }}
+            key={type}
+            className={
+              "rename-tab" +
+              (count > 0 ? " tab-active" : "") +
+              (disabled ? " tab-disabled" : "")
+            }
+            disabled={disabled}
+            onClick={() => onAddRule(type)}
+            title={limitReached ? `最多只能添加 ${MAX_RENAME_RULES} 条规则` : `添加${meta.label}规则`}
           >
-            {tab.icon} {tab.label}{enabled ? " [选中]" : ""}
+            <RuleIcon type={type} size={15} />
+            <span>{meta.label}</span>
+            {count > 0 && <span className="rename-tab__count">{count}</span>}
           </button>
         );
       })}
+      <span className="rename-tab-bar__limit">
+        {rules.length}/{MAX_RENAME_RULES}
+      </span>
     </div>
   );
 }

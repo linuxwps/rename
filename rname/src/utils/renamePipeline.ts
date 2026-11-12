@@ -1,58 +1,64 @@
 import type { FileItem } from "../types/file";
 import type {
-  RenameModeStates,
-  SequentialConfig,
-  RegexConfig,
-  ReplaceConfig,
-  PrefixConfig,
-  SuffixConfig,
-  ExtensionConfig,
+  RenameRule,
+  RulePreviewStep,
 } from "../types/rename";
+import { joinFileName, splitFileName } from "./rename";
+import { formatDate, selectDate } from "./exifDate";
 
-/**
- * 6 种重命名模式的应用顺序（按 D-14 规定）：
- * 时间 → 正则 → 替换 → 前缀 → 后缀 → 扩展名
- */
-export const MODE_ORDER: Array<keyof RenameModeStates> = [
-  "sequential",
-  "regex",
-  "replace",
-  "prefix",
-  "suffix",
-  "extension",
-];
+function applyCaseMode(value: string, mode: "uppercase" | "lowercase" | "title"): string {
+  switch (mode) {
+    case "uppercase":
+      return value.toUpperCase();
+    case "lowercase":
+      return value.toLowerCase();
+    case "title":
+      return value
+        .toLowerCase()
+        .replace(
+          /(^|[\s_-]+)(\p{L})/gu,
+          (_match, prefix: string, letter: string) =>
+            `${prefix}${letter.toUpperCase()}`
+        );
+  }
+}
 
 /**
  * 应用重命名流水线。
  *
- * 根据 modes 中启用的模式，按 MODE_ORDER 顺序依次对文件名进行变换。
+ * 按规则数组的实际顺序依次对文件名进行变换。
  * 所有操作均为纯函数、无副作用。
  *
  * @param file - 原始文件信息
- * @param modes - 6 种重命名模式的配置状态
+ * @param rules - 有序规则链
  * @param index - 文件在排序列表中的索引（用于 sequential 编号）
  * @param totalFiles - 文件总数
- * @returns 变换后的新 baseName 和 extension
+ * @returns 变换后的新 baseName、extension 和每条规则的中间结果
  */
 export function applyRenamePipeline(
   file: FileItem,
-  modes: RenameModeStates,
+  rules: RenameRule[],
   index: number,
   _totalFiles: number
-): { newBaseName: string; newExtension: string; error?: string } {
-  // 从文件名中分离 baseName 和 extension（处理含多 . 的文件名）
-  const extDot = file.extension ? `.${file.extension}` : "";
-  const lastDotIdx = extDot ? file.name.lastIndexOf(extDot) : -1;
-  let baseName = lastDotIdx > 0 ? file.name.slice(0, lastDotIdx) : file.name;
-  let newExtension = file.extension;
+): {
+  newBaseName: string;
+  newExtension: string;
+  error?: string;
+  steps: RulePreviewStep[];
+} {
+  const parts = splitFileName(file.name);
+  let baseName = parts.baseName;
+  let newExtension = parts.extension;
+  const steps: RulePreviewStep[] = [];
 
-  for (const mode of MODE_ORDER) {
-    const config = modes[mode];
-    if (!config.enabled) continue;
+  for (const rule of rules) {
+    if (!rule.enabled) continue;
 
-    switch (mode) {
+    const beforeFullName = joinFileName(baseName, newExtension);
+
+    switch (rule.type) {
       case "sequential": {
-        const seq = config as SequentialConfig;
+        const seq = rule.config;
         const numStr = (seq.startAt + index)
           .toString()
           .padStart(seq.digits, "0");
@@ -65,18 +71,32 @@ export function applyRenamePipeline(
       }
 
       case "regex": {
-        const r = config as RegexConfig;
+        const r = rule.config;
+        if (!r.pattern) break;
         const flags = r.caseSensitive ? "g" : "gi";
         try {
           baseName = baseName.replace(new RegExp(r.pattern, flags), r.replacement);
         } catch {
-          return { newBaseName: baseName, newExtension, error: `Invalid regex: ${r.pattern}` };
+          const afterFullName = joinFileName(baseName, newExtension);
+          steps.push({
+            ruleId: rule.id,
+            ruleType: rule.type,
+            beforeFullName,
+            afterFullName,
+            changed: beforeFullName !== afterFullName,
+          });
+          return {
+            newBaseName: baseName,
+            newExtension,
+            error: `正则表达式无效：${r.pattern}`,
+            steps,
+          };
         }
         break;
       }
 
       case "replace": {
-        const r = config as ReplaceConfig;
+        const r = rule.config;
         if (!r.findText) break;
         const flags = r.caseSensitive ? "g" : "gi";
         // 对 findText 做正则转义，确保按字面匹配
@@ -85,31 +105,66 @@ export function applyRenamePipeline(
         break;
       }
 
+      case "case": {
+        baseName = applyCaseMode(baseName, rule.config.mode);
+        break;
+      }
+
+      case "exif": {
+        const timestamp = selectDate(file, rule.config);
+        if (timestamp === null) {
+          steps.push({ ruleId: rule.id, ruleType: rule.type, beforeFullName, afterFullName: beforeFullName, changed: false });
+          return { newBaseName: baseName, newExtension, error: "所选日期来源缺失，无法生成文件名", steps };
+        }
+        const date = formatDate(timestamp, rule.config.format);
+        const separator = rule.config.separator;
+        baseName = rule.config.position === "replace"
+          ? date
+          : rule.config.position === "after"
+            ? `${baseName}${separator}${date}`
+            : `${date}${separator}${baseName}`;
+        break;
+      }
+
       case "prefix": {
-        const p = config as PrefixConfig;
+        const p = rule.config;
         baseName = `${p.text}${baseName}`;
         break;
       }
 
       case "suffix": {
-        const s = config as SuffixConfig;
+        const s = rule.config;
         baseName = `${baseName}${s.text}`;
         break;
       }
 
       case "extension": {
-        const ext = config as ExtensionConfig;
-        if (ext.mode === "change" && ext.newExtension) {
-          newExtension = ext.newExtension;
+        const ext = rule.config;
+        const normalizedExtension = ext.newExtension.replace(/^\./, "");
+        if (ext.mode === "change" && normalizedExtension) {
+          newExtension = normalizedExtension;
         } else if (ext.mode === "remove") {
           newExtension = "";
-        } else if (ext.mode === "add" && !newExtension) {
-          newExtension = ext.newExtension;
+        } else if (
+          ext.mode === "add" &&
+          !newExtension &&
+          normalizedExtension
+        ) {
+          newExtension = normalizedExtension;
         }
         break;
       }
     }
+
+    const afterFullName = joinFileName(baseName, newExtension);
+    steps.push({
+      ruleId: rule.id,
+      ruleType: rule.type,
+      beforeFullName,
+      afterFullName,
+      changed: beforeFullName !== afterFullName,
+    });
   }
 
-  return { newBaseName: baseName, newExtension };
+  return { newBaseName: baseName, newExtension, steps };
 }

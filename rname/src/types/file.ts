@@ -5,4 +5,6 @@ export interface FileItem {
   extension: string;
   size: number;
   modifiedAt: number;
+  createdAt: number;
+  exifTakenAt: number | null;
 }

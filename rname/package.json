@@ -1,15 +1,17 @@
 {
   "name": "rname",
-  "version": "1.0.3",
+  "version": "1.2.0",
   "description": "macOS batch rename tool",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "test": "node --test src/utils/rename.test.mjs src/utils/ruleChain.test.mjs src/utils/csv.test.mjs src/utils/listWindow.test.mjs src/utils/fileOrder.test.mjs",
     "preview": "vite preview",
     "tauri": "tauri"
   },
   "dependencies": {
+    "@phosphor-icons/react": "^2.1.10",
     "@tauri-apps/api": "^2.11.0",
     "@tauri-apps/plugin-dialog": "^2.7.1",
     "@tauri-apps/plugin-fs": "^2.5.1",

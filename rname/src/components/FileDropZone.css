@@ -1,13 +1,15 @@
 .file-drop-zone {
   width: 100%;
   height: 100%;
-  border: 1.5px dashed var(--color-border);
+  border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
-  padding: 16px;
+  padding: 0;
   transition: border-color var(--transition-normal), background-color var(--transition-normal), box-shadow var(--transition-normal);
   display: flex;
   flex-direction: column;
-  background-color: transparent;
+  background-color: var(--color-bg);
+  box-shadow: 0 1px 3px rgba(32, 43, 54, 0.035);
+  overflow: hidden;
 }
 
 .file-drop-zone.dragging {
@@ -22,15 +24,74 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   text-align: center;
-  gap: 4px;
+  gap: 8px;
+  margin: 20px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-tertiary);
 }
+
+.drop-zone-add {
+  position: relative;
+  margin-bottom: 6px;
+}
+
+.drop-zone-mark {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: white;
+  color: var(--color-primary);
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(67, 147, 43, 0.1);
+}
+
+.drop-zone-mark:hover { border-color: var(--color-primary); background: var(--color-primary-shadow); }
+
+.drop-zone-add-menu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  left: 50%;
+  width: 144px;
+  padding: 5px;
+  transform: translateX(-50%);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-lg);
+  text-align: left;
+}
+
+.drop-zone-add-menu button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.drop-zone-add-menu button:hover,
+.drop-zone-add-menu button:focus-visible { background: var(--color-primary-shadow); color: var(--color-primary); }
 
 .drop-hint {
   color: var(--color-text);
-  font-size: 15px;
-  font-weight: 500;
+  font-size: 18px;
+  font-weight: 650;
   letter-spacing: -0.01em;
 }
 
@@ -39,9 +100,9 @@
 }
 
 .drop-or {
-  color: var(--color-text-muted);
+  color: var(--color-text-light);
   font-size: 13px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .drop-buttons {
@@ -50,10 +111,14 @@
 }
 
 .picker-button {
-  padding: 8px 18px;
-  background-color: var(--color-primary);
-  color: white;
-  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 13px;
+  background-color: var(--color-bg);
+  color: var(--color-text-light);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   font-size: 13px;
   font-weight: 500;
@@ -65,6 +130,141 @@
   background-color: var(--color-primary-hover);
 }
 
+.picker-button--secondary {
+  background: var(--color-bg);
+}
+
+.picker-button--secondary:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-shadow);
+}
+
 .picker-button:active {
   transform: scale(0.97);
+}
+
+.file-list-toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--color-border-light);
+  color: var(--color-text-light);
+  font-size: 12px;
+}
+
+.file-workspace-header {
+  flex: 0 0 auto;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.file-workspace-header > div:first-child {
+  min-width: 0;
+}
+
+.file-workspace-header h1 {
+  font-size: 19px;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+}
+
+.file-workspace-header p {
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.file-workspace-actions {
+  display: flex;
+  gap: 7px;
+  flex-shrink: 0;
+}
+
+.workspace-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: white;
+  color: var(--color-text-light);
+  height: 32px;
+  padding: 0 12px;
+  font: 500 12px inherit;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.workspace-button:hover { background: var(--color-bg-tertiary); color: var(--color-text); }
+.workspace-button--primary { background: var(--color-primary); border-color: var(--color-primary); color: white; }
+.workspace-button--primary:hover { background: var(--color-primary-hover); color: white; }
+.file-list-toolbar__count strong { color: var(--color-text); font-weight: 650; }
+.file-list-toolbar__count span { color: var(--color-border); margin: 0 4px; }
+
+@media (max-width: 900px) {
+  .file-workspace-header p { display: none; }
+  .file-workspace-actions { gap: 4px; }
+  .workspace-button { padding: 0 8px; }
+}
+
+.file-list-toolbar label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.file-sort-select {
+  position: relative;
+  display: inline-flex;
+  width: calc(4em + 25px);
+  flex-shrink: 0;
+}
+
+.file-sort-select select {
+  width: 100%;
+  height: 26px;
+  padding: 3px 17px 3px 6px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  box-shadow: none;
+}
+
+.file-sort-select__icon {
+  position: absolute;
+  top: 50%;
+  right: 5px;
+  transform: translateY(-50%);
+  color: var(--color-text-light);
+  pointer-events: none;
+}
+
+.file-sort-select select:hover {
+  border-color: var(--color-border);
+  background-color: var(--color-bg-secondary);
+}
+
+.file-sort-select select:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+.file-drop-zone > .file-list-container {
+  flex: 1;
+  height: auto;
 }

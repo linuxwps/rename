@@ -11,7 +11,7 @@ export function ConflictBanner({ totalConflicts }: ConflictBannerProps) {
 
   return (
     <div className="conflict-banner" role="alert">
-      ⚠️ 发现 {totalConflicts} 个重名文件，请调整重命名规则
+      ⚠️ 发现 {totalConflicts} 个文件名冲突或规则错误，请查看文件预览
     </div>
   );
 }

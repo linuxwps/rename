@@ -2,11 +2,12 @@ import { useMemo } from "react";
 import { diffWords } from "diff";
 import type { FileItem } from "../types/file";
 import type {
-  RenameModeStates,
+  RenameRule,
   PreviewResult,
   DiffSegment,
 } from "../types/rename";
 import { applyRenamePipeline } from "../utils/renamePipeline";
+import { joinFileName, splitFileName } from "../utils/rename";
 
 /**
  * 检测预览结果中的重名冲突。
@@ -45,46 +46,54 @@ function detectConflicts(results: PreviewResult[]): void {
 /**
  * 重命名预览计算 hook。
  *
- * 接收文件列表和重命名模式配置，计算所有文件的预览结果。
- * 所有计算在 useMemo 中完成，依赖 files 和 modes 变化时自动重算。
+ * 接收文件列表和有序规则链，计算所有文件的预览结果。
+ * 所有计算在 useMemo 中完成，依赖 files 和 rules 变化时自动重算。
  * 预览是派生数据，不使用 useState 管理。
  *
  * @param files - 文件列表
- * @param modes - 6 种重命名模式的配置状态
+ * @param rules - 有序规则链
  * @returns 预览结果数组和冲突总数
  */
 export function useRenameEngine(
   files: FileItem[],
-  modes: RenameModeStates
+  rules: RenameRule[],
+  targetNames?: ReadonlyMap<string, string>
 ): {
   previews: PreviewResult[];
   totalConflicts: number;
 } {
-  // 稳定依赖：用排序后的文件 ID 拼接字符串代替完整 files 数组引用
-  const fileIdsKey = useMemo(() => files.map((f) => f.id).sort().join(","), [files]);
+  // 文件名或路径变化后必须重新计算预览。
+  const filesKey = useMemo(
+    () =>
+      files
+        .map((file) =>
+          `${file.id}\0${file.path}\0${file.name}\0${file.createdAt}\0${file.modifiedAt}\0${file.exifTakenAt ?? ""}`
+        )
+        .join("\u001f"),
+    [files]
+  );
 
   return useMemo(() => {
-    // 对文件按修改时间升序排序（副本排序，不修改原数组）
-    const sorted = [...files].sort(
-      (a, b) => (a.modifiedAt ?? 0) - (b.modifiedAt ?? 0)
-    );
+    // 编号与用户看到的添加顺序保持一致。
+    const previews: PreviewResult[] = files.map((file, index) => {
+      const parts = splitFileName(file.name);
+      const oldBaseName = parts.baseName;
+      const oldExtension = parts.extension;
 
-    const previews: PreviewResult[] = sorted.map((file, index) => {
-      const extDot = file.extension ? `.${file.extension}` : "";
-      const lastDotIdx = extDot ? file.name.lastIndexOf(extDot) : -1;
-      const oldBaseName = lastDotIdx > 0 ? file.name.slice(0, lastDotIdx) : file.name;
-      const oldExtension = file.extension;
-
-      const { newBaseName, newExtension } = applyRenamePipeline(
+      const pipeline = applyRenamePipeline(
         file,
-        modes,
+        rules,
         index,
         files.length
       );
+      const targetName = targetNames?.get(file.path);
+      const override = targetName ? splitFileName(targetName) : null;
+      const newBaseName = override?.baseName ?? pipeline.newBaseName;
+      const newExtension = override?.extension ?? pipeline.newExtension;
+      const error = override ? undefined : pipeline.error;
+      const steps = pipeline.steps;
 
-      const newFullName = newExtension
-        ? `${newBaseName}.${newExtension}`
-        : newBaseName;
+      const newFullName = joinFileName(newBaseName, newExtension);
 
       // 对 baseName 部分进行词级 diff（仅在有变化时计算）
       let diffBaseName: DiffSegment[];
@@ -124,13 +133,22 @@ export function useRenameEngine(
         diffExtension,
         hasConflict: false,
         conflictWith: [],
+        validationError: error,
+        ruleSteps: steps,
       };
     });
+
+    for (const preview of previews) {
+      if (preview.validationError) {
+        preview.hasConflict = true;
+        preview.conflictWith = [preview.validationError];
+      }
+    }
 
     // 冲突检测
     detectConflicts(previews);
 
     const totalConflicts = previews.filter((p) => p.hasConflict).length;
     return { previews, totalConflicts };
-  }, [fileIdsKey, modes]);
+  }, [filesKey, rules, targetNames]);
 }
