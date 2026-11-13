@@ -206,7 +206,13 @@
 }
 
 .workspace-button:hover { background: var(--color-bg-tertiary); color: var(--color-text); }
-.workspace-button--primary { background: var(--color-primary); border-color: var(--color-primary); color: white; }
+.workspace-button--primary {
+  width: 112px;
+  min-width: 112px;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+}
 .workspace-button--primary:hover { background: var(--color-primary-hover); color: white; }
 .file-list-toolbar__count strong { color: var(--color-text); font-weight: 650; }
 .file-list-toolbar__count span { color: var(--color-border); margin: 0 4px; }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { RenameRule } from "../../types/rename";
 import {
   describeRule,
@@ -16,7 +16,10 @@ import { RuleIcon } from "./RuleIcon";
 import "./RuleChainManager.css";
 
 type Dragged = { id: string; index: number };
-const RULE_DRAG_MIME = "application/x-rname-rule";
+type DragSession = Dragged & {
+  pointerId: number;
+  targetIndex: number;
+};
 
 interface RuleChainManagerProps {
   rules: RenameRule[];
@@ -47,6 +50,90 @@ export function RuleChainManager({
 }: RuleChainManagerProps) {
   const [dragging, setDragging] = useState<Dragged | null>(null);
   const [dropIndex, setDropIndex] = useState<number | null>(null);
+  const dragRef = useRef<DragSession | null>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+
+  useEffect(() => {
+    const handlePointerMove = (event: PointerEvent) => {
+      const session = dragRef.current;
+      if (!session || event.pointerId !== session.pointerId) return;
+
+      event.preventDefault();
+      const items = Array.from(
+        listRef.current?.querySelectorAll<HTMLElement>(".rule-chain-item") ?? []
+      );
+      if (items.length === 0) return;
+
+      let targetIndex = items.length - 1;
+      for (let index = 0; index < items.length; index += 1) {
+        const bounds = items[index].getBoundingClientRect();
+        if (event.clientY < bounds.top + bounds.height / 2) {
+          targetIndex = index;
+          break;
+        }
+      }
+
+      session.targetIndex = targetIndex;
+      setDropIndex(targetIndex);
+    };
+
+    const finishDrag = (event: PointerEvent) => {
+      const session = dragRef.current;
+      if (!session || event.pointerId !== session.pointerId) return;
+
+      dragRef.current = null;
+      setDragging(null);
+      setDropIndex(null);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+
+      if (session.targetIndex !== session.index) {
+        onMoveRuleTo(session.index, session.targetIndex);
+      }
+    };
+
+    const cancelDrag = (event: PointerEvent) => {
+      const session = dragRef.current;
+      if (!session || event.pointerId !== session.pointerId) return;
+      dragRef.current = null;
+      setDragging(null);
+      setDropIndex(null);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+
+    window.addEventListener("pointermove", handlePointerMove, {
+      passive: false,
+    });
+    window.addEventListener("pointerup", finishDrag);
+    window.addEventListener("pointercancel", cancelDrag);
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", finishDrag);
+      window.removeEventListener("pointercancel", cancelDrag);
+    };
+  }, [onMoveRuleTo]);
+
+  const beginDrag = (
+    event: React.PointerEvent<HTMLElement>,
+    rule: RenameRule,
+    index: number
+  ) => {
+    if (event.button !== 0 || rules.length < 2) return;
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    dragRef.current = {
+      id: rule.id,
+      index,
+      pointerId: event.pointerId,
+      targetIndex: index,
+    };
+    setDragging({ id: rule.id, index });
+    setDropIndex(index);
+    document.body.style.cursor = "grabbing";
+    document.body.style.userSelect = "none";
+  };
 
   return (
     <div className="rule-chain-manager">
@@ -80,10 +167,11 @@ export function RuleChainManager({
         </div>
       ) : (
         <ul
-          className="rule-chain-manager__list"
-          onDragOver={(event) => {
-            event.preventDefault();
-          }}
+          ref={listRef}
+          className={
+            "rule-chain-manager__list" +
+            (dragging ? " rule-chain-manager__list--dragging" : "")
+          }
         >
           {rules.map((rule, index) => {
             const meta = RULE_META[rule.type];
@@ -98,59 +186,14 @@ export function RuleChainManager({
                   "rule-chain-item" +
                   (selected ? " rule-chain-item--selected" : "") +
                   (!rule.enabled ? " rule-chain-item--disabled" : "") +
+                  (dragging?.id === rule.id ? " rule-chain-item--dragging" : "") +
                   (dropIndex === index && dragging ? " rule-chain-item--drop-target" : "")
                 }
-                draggable={rules.length > 1}
-                onDragStart={(event) => {
-                  event.stopPropagation();
-                  setDragging({ id: rule.id, index });
-                  setDropIndex(index);
-                  event.dataTransfer.setData(
-                    RULE_DRAG_MIME,
-                    JSON.stringify({ id: rule.id, index })
-                  );
-                  event.dataTransfer.setData("text/plain", rule.id);
-                  event.dataTransfer.effectAllowed = "move";
-                }}
-                onDragOver={(event) => {
-                  const hasRuleData = Array.from(
-                    event.dataTransfer.types
-                  ).includes(RULE_DRAG_MIME);
-                  if (!hasRuleData && !dragging) return;
-                  event.preventDefault();
-                  event.stopPropagation();
-                  event.dataTransfer.dropEffect = "move";
-                  setDropIndex(index);
-                }}
-                onDragLeave={() => {
-                  setDropIndex((current) => (current === index ? null : current));
-                }}
-                onDrop={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  let source = dragging;
-                  const raw = event.dataTransfer.getData(RULE_DRAG_MIME);
-                  if (raw) {
-                    try {
-                      source = JSON.parse(raw) as Dragged;
-                    } catch {
-                      source = dragging;
-                    }
-                  }
-                  if (source && source.id !== rule.id) {
-                    onMoveRuleTo(source.index, index);
-                  }
-                  setDragging(null);
-                  setDropIndex(null);
-                }}
-                onDragEnd={() => {
-                  setDragging(null);
-                  setDropIndex(null);
-                }}
               >
                 <span
                   className="rule-chain-item__drag"
                   title={rules.length > 1 ? "拖拽调整规则顺序" : undefined}
+                  onPointerDown={(event) => beginDrag(event, rule, index)}
                 >
                   <DotsSixVertical
                     className="button-icon"

@@ -91,6 +91,15 @@
   background: var(--color-primary-shadow);
 }
 
+.rule-chain-item--dragging {
+  opacity: 0.6;
+}
+
+.rule-chain-manager__list--dragging,
+.rule-chain-manager__list--dragging * {
+  cursor: grabbing !important;
+}
+
 .rule-chain-item__drag {
   display: inline-flex;
   align-items: center;
@@ -104,6 +113,7 @@
   color: var(--color-text-muted);
   cursor: grab;
   border-radius: var(--radius-md) 0 0 var(--radius-md);
+  touch-action: none;
   user-select: none;
 }
 
