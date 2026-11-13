@@ -5,7 +5,15 @@
 [![Latest release](https://img.shields.io/github/v/release/linuxwps/rename)](https://github.com/linuxwps/rename/releases/latest)
 [![Build](https://github.com/linuxwps/rename/actions/workflows/build.yml/badge.svg)](https://github.com/linuxwps/rename/actions/workflows/build.yml)
 
-最新版本：**v1.2.0** · [查看 Release 与下载](https://github.com/linuxwps/rename/releases/tag/v1.2.0)
+最新版本：**v1.2.1** · [查看 Release 与下载](https://github.com/linuxwps/rename/releases/tag/v1.2.1)
+
+## v1.2.1 更新
+
+- 新增跟随系统外观的界面深色模式，并同步切换标题栏日间/夜间图标
+- App 图标改为圆角矩形底板，提供奶白色日间版和深灰色夜间版
+- 统一 8 种规则图标为无灰色底色的线性图标
+- 文件删除按钮改为常显，表头与数据列支持居中对齐
+- 优化文件列宽拖动：优先压缩右侧列，达到最小宽度后才显示水平滚动条
 
 ## 功能
 
@@ -41,7 +49,7 @@
 | Windows 10+ | x64 | `.exe` |
 | Linux | amd64 | `.deb` |
 
-当前 `v1.2.0` Release 暂未提供 Intel Mac 安装包。
+当前 `v1.2.1` Release 暂未提供 Intel Mac 安装包。
 
 ## 快速开始
 
@@ -51,9 +59,9 @@
 
 | 平台 | 安装包 |
 |------|--------|
-| macOS（Apple Silicon） | [Rename_1.2.0_aarch64.dmg](https://github.com/linuxwps/rename/releases/download/v1.2.0/Rename_1.2.0_aarch64.dmg) |
-| Windows x64 | [Rename_1.2.0_x64-setup.exe](https://github.com/linuxwps/rename/releases/download/v1.2.0/Rename_1.2.0_x64-setup.exe) |
-| Linux amd64 | [Rename_1.2.0_amd64.deb](https://github.com/linuxwps/rename/releases/download/v1.2.0/Rename_1.2.0_amd64.deb) |
+| macOS（Apple Silicon） | [Rename_1.2.1_aarch64.dmg](https://github.com/linuxwps/rename/releases/download/v1.2.1/Rename_1.2.1_aarch64.dmg) |
+| Windows x64 | [Rename_1.2.1_x64-setup.exe](https://github.com/linuxwps/rename/releases/download/v1.2.1/Rename_1.2.1_x64-setup.exe) |
+| Linux amd64 | [Rename_1.2.1_amd64.deb](https://github.com/linuxwps/rename/releases/download/v1.2.1/Rename_1.2.1_amd64.deb) |
 
 ### 开发
 

@@ -158,7 +158,7 @@ export function RuleChainManager({
                   <span className="rule-chain-item__index">
                     {index + 1}
                   </span>
-                  <RuleIcon type={rule.type} size={16} weight="duotone" />
+                  <RuleIcon type={rule.type} size={16} />
                   <span className="rule-chain-item__meta">
                     <span className="rule-chain-item__name">
                       {meta.label}

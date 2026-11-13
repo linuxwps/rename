@@ -26,13 +26,11 @@ const RULE_ICONS: Record<TabKey, ComponentType<IconProps>> = {
 interface RuleIconProps {
   type: TabKey;
   size?: number;
-  weight?: IconProps["weight"];
 }
 
 export function RuleIcon({
   type,
   size = 16,
-  weight = "regular",
 }: RuleIconProps) {
   const Icon = RULE_ICONS[type];
 
@@ -40,7 +38,7 @@ export function RuleIcon({
     <Icon
       className="button-icon rule-icon"
       size={size}
-      weight={weight}
+      weight="regular"
       aria-hidden="true"
     />
   );

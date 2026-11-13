@@ -46,7 +46,7 @@
   place-items: center;
   border: 1px solid var(--color-border);
   border-radius: 12px;
-  background: white;
+  background: var(--color-bg);
   color: var(--color-primary);
   line-height: 1;
   cursor: pointer;
@@ -196,7 +196,7 @@
   gap: 6px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  background: white;
+  background: var(--color-bg);
   color: var(--color-text-light);
   height: 32px;
   padding: 0 12px;

@@ -1,4 +1,5 @@
 :root {
+  color-scheme: light dark;
   --color-primary: #43932b;
   --color-primary-hover: #367a22;
   --color-primary-shadow: rgba(67, 147, 43, 0.1);
@@ -19,6 +20,16 @@
   --color-bg-input: #ffffff;
   --color-bg-overlay: rgba(255, 255, 255, 0.92);
   --color-disabled: #aeb9c4;
+  --color-titlebar-start: rgba(255, 255, 255, 0.92);
+  --color-titlebar-end: rgba(244, 247, 249, 0.94);
+  --color-titlebar-text: #364657;
+  --color-titlebar-border: rgba(84, 102, 119, 0.16);
+  --color-table-head: #f4f7f3;
+  --color-row-selected: #f4f9f1;
+  --color-row-selected-hover: #ecf4e8;
+  --color-control-knob: #ffffff;
+  --color-scrollbar: rgba(72, 91, 110, 0.42);
+  --color-scrollbar-hover: rgba(53, 75, 96, 0.62);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.06), 0 0 1px rgba(0, 0, 0, 0.04);
   --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.08), 0 0 1px rgba(0, 0, 0, 0.06);
@@ -28,6 +39,45 @@
   --radius-lg: 14px;
   --transition-fast: 120ms cubic-bezier(0.25, 0.1, 0.25, 1);
   --transition-normal: 200ms cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-primary: #58a943;
+    --color-primary-hover: #65ba4e;
+    --color-primary-shadow: rgba(112, 208, 83, 0.14);
+    --color-primary-ring: rgba(112, 208, 83, 0.36);
+    --color-error: #ff8d88;
+    --color-success: #67d6ae;
+    --color-warning: #e5b665;
+    --color-text: #e7edf2;
+    --color-text-muted: #9ca9b5;
+    --color-text-light: #c0c9d1;
+    --color-border: #46525d;
+    --color-border-light: #343d46;
+    --color-bg: #20262c;
+    --color-bg-secondary: #171c21;
+    --color-bg-tertiary: #252c33;
+    --color-bg-hover: rgba(255, 255, 255, 0.06);
+    --color-bg-active: rgba(255, 255, 255, 0.1);
+    --color-bg-input: #2a3138;
+    --color-bg-overlay: rgba(26, 31, 36, 0.94);
+    --color-disabled: #69737d;
+    --color-titlebar-start: rgba(39, 45, 51, 0.96);
+    --color-titlebar-end: rgba(25, 30, 35, 0.97);
+    --color-titlebar-text: #e2e8ed;
+    --color-titlebar-border: rgba(255, 255, 255, 0.1);
+    --color-table-head: #20272d;
+    --color-row-selected: rgba(88, 169, 67, 0.15);
+    --color-row-selected-hover: rgba(88, 169, 67, 0.22);
+    --color-control-knob: #f5f8fa;
+    --color-scrollbar: rgba(183, 198, 211, 0.36);
+    --color-scrollbar-hover: rgba(205, 218, 229, 0.58);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.28), 0 0 1px rgba(255, 255, 255, 0.04);
+    --shadow-lg: 0 6px 20px rgba(0, 0, 0, 0.34), 0 0 1px rgba(255, 255, 255, 0.06);
+    --shadow-toast: 0 8px 32px rgba(0, 0, 0, 0.42), 0 0 1px rgba(255, 255, 255, 0.08);
+  }
 }
 
 html,
@@ -72,9 +122,9 @@ body {
   align-items: center;
   gap: 9px;
   padding: 0 14px 0 82px;
-  border-bottom: 1px solid rgba(84, 102, 119, 0.16);
+  border-bottom: 1px solid var(--color-titlebar-border);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(244, 247, 249, 0.94)),
+    linear-gradient(180deg, var(--color-titlebar-start), var(--color-titlebar-end)),
     var(--color-bg-secondary);
   color: var(--color-text);
   user-select: none;
@@ -94,7 +144,7 @@ body {
   font-size: 12px;
   font-weight: 650;
   letter-spacing: -0.01em;
-  color: #364657;
+  color: var(--color-titlebar-text);
 }
 
 .app-content {
@@ -165,6 +215,10 @@ body {
   pointer-events: none;
 }
 
+.app .rule-icon {
+  background: transparent;
+}
+
 .app :is(
   .file-list-scroll,
   .rename-tab-bar,
@@ -232,7 +286,7 @@ body {
   .rule-preview-list,
   .preset-manager__list
 ):is(:hover, :focus-within) {
-  scrollbar-color: rgba(72, 91, 110, 0.42) transparent;
+  scrollbar-color: var(--color-scrollbar) transparent;
 }
 
 .app :is(
@@ -245,7 +299,7 @@ body {
   .rule-preview-list,
   .preset-manager__list
 ):is(:hover, :focus-within)::-webkit-scrollbar-thumb {
-  background: rgba(72, 91, 110, 0.42);
+  background: var(--color-scrollbar);
   background-clip: padding-box;
 }
 
@@ -259,7 +313,7 @@ body {
   .rule-preview-list,
   .preset-manager__list
 ):is(:hover, :focus-within)::-webkit-scrollbar-thumb:hover {
-  background: rgba(53, 75, 96, 0.62);
+  background: var(--color-scrollbar-hover);
   background-clip: padding-box;
 }
 

@@ -43,7 +43,8 @@ import {
 } from "./utils/presets";
 import { parseCsvPathMappings, toCsv } from "./utils/csv";
 import { exportCsvFile, importCsvFile, writeAppLog } from "./utils/renameService";
-import appIconUrl from "../src-tauri/icons/128x128.png";
+import dayAppIconUrl from "../src-tauri/icons/day/icon.png";
+import nightAppIconUrl from "../src-tauri/icons/night/icon.png";
 import "./App.css";
 
 function App() {
@@ -60,10 +61,22 @@ function App() {
   const [selectedFileIds, setSelectedFileIds] = useState<Set<string>>(new Set());
   const [logsOpen, setLogsOpen] = useState(false);
   const [csvTargetNames, setCsvTargetNames] = useState<Map<string, string>>(new Map());
+  const [usesDarkAppearance, setUsesDarkAppearance] = useState(
+    () => window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false
+  );
   const knownFileIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     writeAppLog("info", "Rename 应用已启动");
+  }, []);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const syncAppearance = () => setUsesDarkAppearance(mediaQuery.matches);
+
+    syncAppearance();
+    mediaQuery.addEventListener("change", syncAppearance);
+    return () => mediaQuery.removeEventListener("change", syncAppearance);
   }, []);
 
   useEffect(() => {
@@ -502,7 +515,7 @@ function App() {
       <header className="app-titlebar" data-tauri-drag-region>
         <img
           className="app-titlebar__icon"
-          src={appIconUrl}
+          src={usesDarkAppearance ? nightAppIconUrl : dayAppIconUrl}
           alt=""
           draggable={false}
         />

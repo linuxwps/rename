@@ -22,7 +22,7 @@ export function LabeledRuleForm({
     <div className="labeled-rule-form">
       <div className="labeled-rule-form__header">
         <span className="labeled-rule-form__title">
-          {meta && <RuleIcon type={type as TabKey} size={16} weight="duotone" />}
+          {meta && <RuleIcon type={type as TabKey} size={16} />}
           {meta?.label ?? "规则"}配置
         </span>
         {onRemove && (
