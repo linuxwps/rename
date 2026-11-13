@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useFileList } from "./hooks/useFileList";
 import { useRenameEngine } from "./hooks/useRenameEngine";
 import { useRenameExecutor } from "./hooks/useRenameExecutor";
@@ -78,6 +79,15 @@ function App() {
     mediaQuery.addEventListener("change", syncAppearance);
     return () => mediaQuery.removeEventListener("change", syncAppearance);
   }, []);
+
+  const startWindowDrag = useCallback(
+    (event: React.MouseEvent<HTMLElement>) => {
+      if (event.button !== 0) return;
+      event.preventDefault();
+      void getCurrentWindow().startDragging();
+    },
+    []
+  );
 
   useEffect(() => {
     const currentIds = new Set(files.map((file) => file.id));
@@ -512,7 +522,11 @@ function App() {
 
   return (
     <div className="app">
-      <header className="app-titlebar" data-tauri-drag-region>
+      <header
+        className="app-titlebar"
+        data-tauri-drag-region
+        onMouseDown={startWindowDrag}
+      >
         <img
           className="app-titlebar__icon"
           src={usesDarkAppearance ? nightAppIconUrl : dayAppIconUrl}

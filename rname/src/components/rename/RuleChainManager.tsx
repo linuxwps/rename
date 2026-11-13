@@ -16,6 +16,7 @@ import { RuleIcon } from "./RuleIcon";
 import "./RuleChainManager.css";
 
 type Dragged = { id: string; index: number };
+const RULE_DRAG_MIME = "application/x-rname-rule";
 
 interface RuleChainManagerProps {
   rules: RenameRule[];
@@ -99,14 +100,26 @@ export function RuleChainManager({
                   (!rule.enabled ? " rule-chain-item--disabled" : "") +
                   (dropIndex === index && dragging ? " rule-chain-item--drop-target" : "")
                 }
-                draggable
+                draggable={rules.length > 1}
                 onDragStart={(event) => {
+                  event.stopPropagation();
                   setDragging({ id: rule.id, index });
                   setDropIndex(index);
+                  event.dataTransfer.setData(
+                    RULE_DRAG_MIME,
+                    JSON.stringify({ id: rule.id, index })
+                  );
+                  event.dataTransfer.setData("text/plain", rule.id);
                   event.dataTransfer.effectAllowed = "move";
                 }}
                 onDragOver={(event) => {
+                  const hasRuleData = Array.from(
+                    event.dataTransfer.types
+                  ).includes(RULE_DRAG_MIME);
+                  if (!hasRuleData && !dragging) return;
                   event.preventDefault();
+                  event.stopPropagation();
+                  event.dataTransfer.dropEffect = "move";
                   setDropIndex(index);
                 }}
                 onDragLeave={() => {
@@ -114,8 +127,18 @@ export function RuleChainManager({
                 }}
                 onDrop={(event) => {
                   event.preventDefault();
-                  if (dragging && dragging.id !== rule.id) {
-                    onMoveRuleTo(dragging.index, index);
+                  event.stopPropagation();
+                  let source = dragging;
+                  const raw = event.dataTransfer.getData(RULE_DRAG_MIME);
+                  if (raw) {
+                    try {
+                      source = JSON.parse(raw) as Dragged;
+                    } catch {
+                      source = dragging;
+                    }
+                  }
+                  if (source && source.id !== rule.id) {
+                    onMoveRuleTo(source.index, index);
                   }
                   setDragging(null);
                   setDropIndex(null);
@@ -125,10 +148,9 @@ export function RuleChainManager({
                   setDropIndex(null);
                 }}
               >
-                <button
+                <span
                   className="rule-chain-item__drag"
-                  aria-label="拖拽排序"
-                  disabled={rules.length < 2}
+                  title={rules.length > 1 ? "拖拽调整规则顺序" : undefined}
                 >
                   <DotsSixVertical
                     className="button-icon"
@@ -136,7 +158,7 @@ export function RuleChainManager({
                     weight="bold"
                     aria-hidden="true"
                   />
-                </button>
+                </span>
                 <button
                   className="rule-chain-item__toggle"
                   onClick={() => onToggleRule(rule.id)}
