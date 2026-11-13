@@ -39,7 +39,9 @@
 
 <img width="1200" height="800" alt="ScreenShot_2026-11-12_215723_077@2x" src="https://github.com/user-attachments/assets/2d4b1855-397d-4b9e-8312-5399d96e9463" />
 
-<img width="1200" height="800" alt="ScreenShot_2026-11-12_215841_014@2x" src="https://github.com/user-attachments/assets/51fc2225-2dbc-4588-8153-b17dd7405c34" />
+<img width="1200" height="798" alt="ScreenShot_2026-11-13_101720_207@2x" src="https://github.com/user-attachments/assets/5864380e-09bb-4320-8d64-32052306a43b" />
+
+<img width="1200" height="798" alt="ScreenShot_2026-11-13_101944_582@2x" src="https://github.com/user-attachments/assets/875a8028-01e4-43a1-bf29-7db91de932da" />
 
 
 ## 系统要求
