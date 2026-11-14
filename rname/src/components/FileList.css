@@ -115,7 +115,7 @@
 .file-row--selected:hover td { background-color: var(--color-row-selected-hover); }
 .file-name { color: var(--color-text); font-weight: 550; }
 .file-extension, .file-size, .file-date { color: var(--color-text-light); font-variant-numeric: tabular-nums; }
-.new-name-column { color: var(--color-primary); }
+.new-name-column { color: var(--color-text); }
 
 .file-table td[data-col="actions"] {
   width: 56px;
