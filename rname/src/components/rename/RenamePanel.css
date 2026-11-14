@@ -41,7 +41,7 @@
   min-height: 0;
   overflow: hidden;
   display: grid;
-  grid-template-columns: minmax(220px, 1.05fr) minmax(250px, 1.35fr) minmax(195px, 0.85fr);
+  grid-template-columns: minmax(390px, 1fr) minmax(350px, 1fr) minmax(238px, 0.68fr);
   gap: 16px;
   background: var(--color-bg-tertiary);
 }
@@ -69,6 +69,7 @@
 }
 
 .rename-selected-editor {
+  padding: 14px 16px;
   align-self: stretch;
 }
 

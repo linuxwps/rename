@@ -3,6 +3,8 @@ import type { FileItem } from "../types/file";
 import type { PreviewResult, ExecutionResult } from "../types/rename";
 import { FileListRow } from "./FileListRow";
 import { computeVisibleRange } from "../utils/listWindow";
+import { formatFileSize } from "../utils/formatFileSize";
+import { formatDate } from "../utils/formatDate";
 import "./FileList.css";
 
 const ROW_HEIGHT = 34;
@@ -24,11 +26,11 @@ const MIN_COLUMN_WIDTHS: Record<string, number> = {
   fileName: 150,
   newName: 180,
   extension: 80,
-  size: 76,
+  size: 88,
   date: 112,
   actions: 56,
 };
-const MAX_COLUMN_WIDTH = 640;
+const SIZE_COLUMN_EXTRA_WIDTH = 12;
 const RESIZABLE_COLUMN_KEYS = COLUMNS.filter(
   (column) => column.label && column.key !== "actions"
 ).map((column) => column.key);
@@ -38,7 +40,8 @@ const FIXED_COLUMN_WIDTH =
 function rebalanceRightColumns(
   baseWidths: Record<string, number>,
   key: string,
-  requestedWidth: number
+  requestedWidth: number,
+  minimums: Record<string, number>
 ) {
   const next = { ...baseWidths };
   const delta = requestedWidth - baseWidths[key];
@@ -51,7 +54,7 @@ function rebalanceRightColumns(
     let remaining = delta;
     for (const rightKey of rightKeys) {
       if (remaining === 0) break;
-      const minimum = MIN_COLUMN_WIDTHS[rightKey];
+      const minimum = minimums[rightKey];
       const available = Math.max(0, next[rightKey] - minimum);
       const absorbed = Math.min(available, remaining);
       next[rightKey] -= absorbed;
@@ -61,17 +64,91 @@ function rebalanceRightColumns(
     let remaining = -delta;
     for (const rightKey of rightKeys) {
       if (remaining === 0) break;
-      const available = Math.max(
-        0,
-        MAX_COLUMN_WIDTH - next[rightKey]
-      );
-      const absorbed = Math.min(available, remaining);
-      next[rightKey] += absorbed;
-      remaining -= absorbed;
+      next[rightKey] += remaining;
+      remaining = 0;
     }
   }
 
   return next;
+}
+
+function measureColumnWidths(
+  files: FileItem[],
+  previews: Map<string, PreviewResult>,
+  manualSort: boolean,
+  table: HTMLTableElement | null
+): Record<string, number> {
+  const widths = { ...MIN_COLUMN_WIDTHS };
+  if (!table) return widths;
+
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+  if (!context) return widths;
+
+  const row = table.querySelector<HTMLElement>(".file-row");
+  const cell = row?.querySelector<HTMLElement>(".file-name");
+  const cellStyle = getComputedStyle(cell ?? table);
+  const previewStyle = getComputedStyle(
+    row?.querySelector<HTMLElement>(".new-name-column") ?? table
+  );
+  const stepButton = row?.querySelector<HTMLElement>(".rule-steps-toggle");
+  const stepStyle = getComputedStyle(stepButton ?? table);
+  const diffAdded = row?.querySelector<HTMLElement>(".diff-added");
+  const diffRemoved = row?.querySelector<HTMLElement>(".diff-removed");
+  const diffAddedStyle = diffAdded ? getComputedStyle(diffAdded) : null;
+  const diffRemovedStyle = diffRemoved ? getComputedStyle(diffRemoved) : null;
+  const padding = (style: CSSStyleDeclaration) =>
+    parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+  const textWidth = (text: string, font: string) => {
+    context.font = font;
+    return context.measureText(text).width;
+  };
+  const rowFont = cellStyle.font;
+  const previewFont = previewStyle.font;
+  const stepFont = stepStyle.font;
+
+  for (const file of files) {
+    widths.fileName = Math.max(
+      widths.fileName,
+      Math.ceil(textWidth(file.name, rowFont) + padding(cellStyle) + (manualSort ? 19 : 0) + 2)
+    );
+    widths.extension = Math.max(
+      widths.extension,
+      Math.ceil(textWidth(file.extension || "-", previewFont) + padding(previewStyle) + 2)
+    );
+    widths.size = Math.max(
+      widths.size,
+      Math.ceil(
+        textWidth(formatFileSize(file.size), previewFont) +
+        padding(previewStyle) +
+        SIZE_COLUMN_EXTRA_WIDTH
+      )
+    );
+    widths.date = Math.max(
+      widths.date,
+      Math.ceil(textWidth(formatDate(file.modifiedAt), previewFont) + padding(previewStyle) + 2)
+    );
+
+    const preview = previews.get(file.id);
+    if (!preview) continue;
+    const segments = [...preview.diffBaseName, ...preview.diffExtension];
+    const previewTextWidth = segments.reduce((total, segment) => {
+      const highlight = segment.type === "added" ? diffAddedStyle
+        : segment.type === "removed" ? diffRemovedStyle : null;
+      return total + textWidth(segment.value, previewFont) + (highlight ? padding(highlight) : segment.type === "unchanged" ? 0 : 4);
+    }, 0);
+    const changedSteps = preview.ruleSteps.filter((step) => step.changed).length;
+    const stepWidth = preview.ruleSteps.length > 0
+      ? textWidth(`${changedSteps} 处变化 · ${preview.ruleSteps.length} 步`, stepFont) + padding(stepStyle) + 8
+      : 0;
+    const conflictWidth = preview.hasConflict ? 26 : 0;
+    widths.newName = Math.max(
+      widths.newName,
+      Math.ceil(previewTextWidth + stepWidth + (stepWidth ? 8 : 0) + conflictWidth + padding(previewStyle) + 2)
+    );
+  }
+
+  return widths;
 }
 
 interface FileListProps {
@@ -89,22 +166,27 @@ interface FileListProps {
 
 export function FileList({ files, previews, onRemoveFile, executionResults, executionErrors, selectedIds, onToggleSelected, onToggleAll, manualSort, onReorder }: FileListProps) {
   const [expandedFileId, setExpandedFileId] = useState<string | null>(null);
-  const [colWidths, setColWidths] = useState<Record<string, number>>({});
+  const [userWidths, setUserWidths] = useState<Record<string, number>>({});
   const [scrollTop, setScrollTop] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(400);
   const [viewportWidth, setViewportWidth] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const tableRef = useRef<HTMLTableElement>(null);
   const dragRef = useRef<{
     key: string;
     startX: number;
     startW: number;
-    minW: number;
-    maxW: number;
     baseWidths: Record<string, number>;
     latestWidths: Record<string, number>;
   } | null>(null);
-
-  const [colBounds, setColBounds] = useState<Record<string, { min: number; max: number }>>({});
+  const [contentWidths, setContentWidths] = useState<Record<string, number>>(MIN_COLUMN_WIDTHS);
+  const colWidths = useMemo(() => {
+    const next = { ...contentWidths };
+    for (const key of RESIZABLE_COLUMN_KEYS) {
+      next[key] = Math.max(contentWidths[key], userWidths[key] ?? 0);
+    }
+    return next;
+  }, [contentWidths, userWidths]);
 
   const rowOffsets = useMemo(() => {
     const offsets = new Array<number>(files.length + 1);
@@ -150,65 +232,51 @@ export function FileList({ files, previews, onRemoveFile, executionResults, exec
   }, [files.length, rowOffsets, scrollTop, viewportHeight]);
 
   useEffect(() => {
-    const bounds: Record<string, { min: number; max: number }> = {};
-    for (const col of COLUMNS) {
-      if (!col.label || col.key === "select" || col.key === "actions") continue;
-      bounds[col.key] = {
-        min: MIN_COLUMN_WIDTHS[col.key] ?? 80,
-        max: MAX_COLUMN_WIDTH,
-      };
-    }
-    setColBounds(bounds);
-  }, []);
+    const measure = () => setContentWidths(
+      measureColumnWidths(files, previews, manualSort, tableRef.current)
+    );
+    measure();
+    document.fonts?.ready.then(measure);
+  }, [files, previews, manualSort]);
 
   const handleResizeStart = useCallback(
     (key: string, e: React.PointerEvent<HTMLSpanElement>) => {
       e.preventDefault();
       e.stopPropagation();
-      const base: Record<string, number> = {};
-      for (const key of RESIZABLE_COLUMN_KEYS) {
-        const header = document.querySelector(
-          `th[data-col="${key}"]`
-        ) as HTMLElement | null;
-        base[key] = header
-          ? Math.round(header.getBoundingClientRect().width)
-          : (colWidths[key] ?? MIN_COLUMN_WIDTHS[key]);
-      }
-      const bounds = colBounds[key] || { min: 100, max: MAX_COLUMN_WIDTH };
-      const startW = base[key] ?? bounds.min;
-      setColWidths(base);
+      const base = { ...colWidths };
+      const startW = base[key];
+      setUserWidths(base);
       dragRef.current = {
         key,
         startX: e.clientX,
         startW,
-        minW: bounds.min,
-        maxW: bounds.max,
         baseWidths: base,
         latestWidths: base,
       };
       document.body.style.cursor = "col-resize";
       document.body.style.userSelect = "none";
     },
-    [colBounds, colWidths]
+    [colWidths]
   );
 
   useEffect(() => {
     const handlePointerMove = (e: PointerEvent) => {
       if (!dragRef.current) return;
-      const { key, startX, startW, minW, maxW } = dragRef.current;
+      const { key, startX, startW } = dragRef.current;
       const diff = e.clientX - startX;
-      const newW = Math.max(minW, Math.min(maxW, startW + diff));
+      const newW = Math.max(contentWidths[key], startW + diff);
       const nextWidths = rebalanceRightColumns(
         dragRef.current.baseWidths,
         key,
-        newW
+        newW,
+        contentWidths
       );
       dragRef.current.latestWidths = nextWidths;
-      setColWidths(nextWidths);
+      setUserWidths(nextWidths);
     };
     const finishResize = () => {
       if (!dragRef.current) return;
-      setColWidths(dragRef.current.latestWidths);
+      setUserWidths(dragRef.current.latestWidths);
       dragRef.current = null;
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
@@ -221,31 +289,21 @@ export function FileList({ files, previews, onRemoveFile, executionResults, exec
       window.removeEventListener("pointerup", finishResize);
       window.removeEventListener("pointercancel", finishResize);
     };
-  }, []);
+  }, [contentWidths]);
 
   const getColStyle = useCallback(
     (key: string) => {
       const w = colWidths[key];
-      const minimum = MIN_COLUMN_WIDTHS[key];
-      if (w) {
-        return {
-          width: `${w}px`,
-          minWidth: `${minimum}px`,
-          maxWidth: `${w}px`,
-        };
-      }
-      if (minimum) return { minWidth: `${minimum}px` };
-      return undefined;
+      return { width: `${w}px`, minWidth: `${w}px`, maxWidth: `${w}px` };
     },
     [colWidths]
   );
 
   const tableWidth = useMemo(() => {
-    if (Object.keys(colWidths).length === 0) return undefined;
     const columnTotal =
       FIXED_COLUMN_WIDTH +
       RESIZABLE_COLUMN_KEYS.reduce(
-        (total, key) => total + (colWidths[key] ?? MIN_COLUMN_WIDTHS[key]),
+        (total, key) => total + colWidths[key],
         0
       );
     return Math.max(viewportWidth, columnTotal);
@@ -259,8 +317,9 @@ export function FileList({ files, previews, onRemoveFile, executionResults, exec
         onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
       >
       <table
+        ref={tableRef}
         className="file-table"
-        style={tableWidth ? { width: `${tableWidth}px` } : undefined}
+        style={{ width: `${tableWidth}px` }}
       >
         <thead>
           <tr>

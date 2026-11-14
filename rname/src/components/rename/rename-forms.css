@@ -20,6 +20,25 @@
   min-width: 0;
 }
 
+.rename-selected-editor .form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  align-items: center;
+}
+
+.rename-selected-editor .form-group {
+  flex: none;
+  width: 100%;
+  overflow: hidden;
+}
+
+.rename-selected-editor .form-group input[type="text"],
+.rename-selected-editor .form-group input[type="number"],
+.rename-selected-editor .form-group select {
+  min-width: 0;
+  width: 100%;
+}
+
 .form-group label {
   font-size: 13px;
   color: var(--color-text);

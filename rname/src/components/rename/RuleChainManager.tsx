@@ -228,7 +228,10 @@ export function RuleChainManager({
                     <span className="rule-chain-item__name">
                       {meta.label}
                     </span>
-                    <span className="rule-chain-item__desc">
+                    <span
+                      className="rule-chain-item__desc"
+                      title={describeRule(rule)}
+                    >
                       {describeRule(rule)}
                     </span>
                   </span>

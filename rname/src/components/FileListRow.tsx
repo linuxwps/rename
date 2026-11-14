@@ -35,7 +35,7 @@ interface FileListRowProps {
 
 function colStyle(widths: Record<string, number>, key: string) {
   const w = widths[key];
-  return w ? { width: `${w}px`, maxWidth: `${w}px` } : undefined;
+  return w ? { width: `${w}px`, minWidth: `${w}px`, maxWidth: `${w}px` } : undefined;
 }
 
 function RuleStepDiff({ step }: { step: RulePreviewStep }) {
