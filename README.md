@@ -37,11 +37,11 @@
 
 ## 截图
 
-<img width="1200" height="800" alt="ScreenShot_2026-11-12_215723_077@2x" src="https://github.com/user-attachments/assets/2d4b1855-397d-4b9e-8312-5399d96e9463" />
+<img width="1312" height="912" alt="截屏2026-11-15 00 40 50" src="https://github.com/user-attachments/assets/5add92e7-d344-43f8-b82b-378498fc4c4e" />
 
-<img width="1200" height="798" alt="ScreenShot_2026-11-13_101720_207@2x" src="https://github.com/user-attachments/assets/5864380e-09bb-4320-8d64-32052306a43b" />
+<img width="1312" height="912" alt="截屏2026-11-15 00 40 26" src="https://github.com/user-attachments/assets/60688821-f0de-4686-b56f-678be7942fe1" />
 
-<img width="1200" height="798" alt="ScreenShot_2026-11-13_101944_582@2x" src="https://github.com/user-attachments/assets/875a8028-01e4-43a1-bf29-7db91de932da" />
+<img width="1312" height="912" alt="截屏2026-11-15 18 25 06" src="https://github.com/user-attachments/assets/546dd9dc-e890-4b07-a0e4-f1032fec72e3" />
 
 
 ## 系统要求
